@@ -1,4 +1,4 @@
-var CACHE = 'groundplan-v1';
+var CACHE = 'groundplan-v6';
 var FILES = ['/', '/index.html', '/app.html'];
 
 self.addEventListener('install', function(e) {
@@ -19,8 +19,14 @@ self.addEventListener('activate', function(e) {
 
 self.addEventListener('fetch', function(e) {
   e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      return cached || fetch(e.request).catch(function() { return caches.match('/index.html'); });
+    fetch(e.request).then(function(res) {
+      var clone = res.clone();
+      caches.open(CACHE).then(function(c) { c.put(e.request, clone); });
+      return res;
+    }).catch(function() {
+      return caches.match(e.request).then(function(cached) {
+        return cached || caches.match('/index.html');
+      });
     })
   );
 });
