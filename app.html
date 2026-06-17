@@ -186,11 +186,14 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
       <div style="flex:1"><div style="color:#f9fafb;font-size:11px;font-weight:600">Custom color</div><div style="color:#6b7280;font-size:10px">Any stroke color</div></div>
       <button onclick="setCol(document.getElementById('custom-col-in').value)" style="background:#22c55e;color:#0f172a;border:none;border-radius:7px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer">Use</button>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.07)">
-      <div id="custom-fill-sw" style="width:34px;height:34px;border-radius:6px;background:#8b5cf6;border:1px solid rgba(0,0,0,0.2);flex-shrink:0;cursor:pointer" onclick="document.getElementById('custom-fill-col-in').click()"></div>
-      <input type="color" id="custom-fill-col-in" value="#8b5cf6" oninput="setCustomFillCol(this.value)" style="display:none">
-      <div style="flex:1"><div style="color:#f9fafb;font-size:11px;font-weight:600">Fill color</div><div style="color:#6b7280;font-size:10px">Used by Custom Fill material</div></div>
-      <button onclick="setMat('custom');if(S.tool!=='fill')setTool('fill');closeAll();" style="background:#8b5cf6;color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer">Fill</button>
+    <div style="padding:7px 0;border-top:1px solid rgba(255,255,255,0.07)">
+      <div style="color:#f9fafb;font-size:11px;font-weight:600;margin-bottom:6px">Custom Fill Color</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="custom-fill-sw" style="width:34px;height:34px;border-radius:6px;background:#8b5cf6;border:2px solid rgba(255,255,255,0.2);flex-shrink:0"></div>
+        <input type="color" id="custom-fill-col-in" value="#8b5cf6" oninput="setCustomFillCol(this.value)" style="flex:1;height:34px;border:none;border-radius:8px;cursor:pointer;background:none;padding:0">
+        <button onclick="applyCustomFill()" style="background:#8b5cf6;color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Apply Fill</button>
+      </div>
+      <div style="color:#6b7280;font-size:10px;margin-top:5px">Pick color then tap Apply Fill on a shape — or tap a shape with Fill tool active</div>
     </div>
   </div>
   <div class="panel" id="panel-scale">
@@ -1044,7 +1047,21 @@ function setCol(c,noClose){
 function setCustomFillCol(c){
   S.customFillCol=c;
   var sw=document.getElementById('custom-fill-sw');if(sw)sw.style.background=c;
-  if(S.mat==='custom'){document.getElementById('mdot').style.background=c;document.getElementById('fill-sw').style.background=c;}
+  if(S.mat==='custom'){var md=document.getElementById('mdot');if(md)md.style.background=c;var fs=document.getElementById('fill-sw');if(fs)fs.style.background=c;}
+}
+function applyCustomFill(){
+  setMat('custom');
+  if(S.sel){
+    var oi=S.objs.findIndex(function(o){return o.id===S.sel;});
+    if(oi>-1){
+      var t=S.objs[oi].type;
+      var ok=t==='rect'||t==='ellipse'||(t==='polygon'&&S.objs[oi].closed)||(t==='lineshape'&&S.objs[oi].closed)||(t==='curbchain'&&S.objs[oi].closed)||(t==='curveline'&&S.objs[oi].closed)||(t==='pencil'&&S.objs[oi].closed);
+      if(ok){pushUndo();S.objs[oi].fill=S.customFillCol;render();toast('Custom fill applied');closeAll();return;}
+    }
+  }
+  if(S.tool!=='fill')setTool('fill');
+  closeAll();
+  toast('Tap a shape to fill it');
 }
 var toastTm=null;
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(toastTm);toastTm=setTimeout(function(){t.style.display='none';},2100);}
