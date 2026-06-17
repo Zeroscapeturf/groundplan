@@ -1,0 +1,11 @@
+# Netlify configuration for GroundPlan - ZeroScape
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Cache-Control = "no-cache"
+
+# Password protection is handled via Netlify Identity
+# Set up in Netlify dashboard > Site settings > Identity

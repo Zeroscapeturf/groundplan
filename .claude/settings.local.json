@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3)",
+      "Bash(netlify --version)",
+      "Bash(npm --version)",
+      "Read(//Users/daxraymond/Downloads/**)",
+      "Bash(rm -f groundplan-deploy.zip)",
+      "Bash(zip groundplan-deploy.zip groundplan-deploy/index.html groundplan-deploy/app.html groundplan-deploy/sw.js groundplan-deploy/manifest.json)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)"
+    ]
+  }
+}
