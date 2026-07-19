@@ -9,7 +9,8 @@
       "Bash(zip groundplan-deploy.zip groundplan-deploy/index.html groundplan-deploy/app.html groundplan-deploy/sw.js groundplan-deploy/manifest.json)",
       "Bash(git remote *)",
       "Bash(git branch *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(cp /Users/daxraymond/Downloads/groundplan-deploy_5/app.html /Users/daxraymond/Downloads/groundplan-deploy/app.html *)"
     ]
   }
 }
