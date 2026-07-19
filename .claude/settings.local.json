@@ -10,7 +10,9 @@
       "Bash(git remote *)",
       "Bash(git branch *)",
       "Bash(git push *)",
-      "Bash(cp /Users/daxraymond/Downloads/groundplan-deploy_5/app.html /Users/daxraymond/Downloads/groundplan-deploy/app.html *)"
+      "Bash(cp /Users/daxraymond/Downloads/groundplan-deploy_5/app.html /Users/daxraymond/Downloads/groundplan-deploy/app.html *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

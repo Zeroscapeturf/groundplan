@@ -1304,11 +1304,16 @@ function onPD(e){
   }
   if(S.tool==='dimension'){S.drawing=true;S.phase='drawing';S.startPt=snapPt(wp);return;}
   if(S.tool==='eraser'){for(var ei=S.objs.length-1;ei>=0;ei--){if(hitObj(S.objs[ei],wp)){pushUndo();S.objs.splice(ei,1);toast('Deleted');return;}}return;}
-  // Smooth Pen + Pencil (both use pressure-sensitive penpath)
-  if(S.tool==='pen'||S.tool==='pencil'){
+  // Pencil — plain freehand, no measurements
+  if(S.tool==='pencil'){
+    S.drawing=true;S.phase='drawing';
+    S.pencilPts=[wp];return;
+  }
+  // Smooth Pen — pressure-sensitive
+  if(S.tool==='pen'){
     S.drawing=true;S.phase='drawing';
     var p0=Math.max(0.05,e.pressure||0.5);
-    S.penBaseSize=S.tool==='pencil'?2.5:(S.penSize||6);
+    S.penBaseSize=S.penSize||6;
     S.penPts=[{x:wp.x,y:wp.y,p:p0}];S.penDrawing=true;
     return;
   }
@@ -1363,13 +1368,17 @@ function onPM(e){
   }
   if(S.tool==='measure') S.preview={type:'line',start:S.startPt||wp,end:sn,color:'#3b82f6',lineWidth:1.5};
   else if(S.tool==='rect') S.preview={type:'rect',start:S.startPt||wp,end:sn,color:S.col,lineWidth:1.8};
-  else if((S.tool==='pen'||S.tool==='pencil')&&S.penDrawing){
+  else if(S.tool==='pencil'&&S.pencilPts){
+    var pl0=S.pencilPts[S.pencilPts.length-1];
+    if(!pl0||d2(pl0,wp)>1/S.scale)S.pencilPts.push(wp);
+    S.preview={type:'pencil',pts:S.pencilPts.slice(),color:S.col,lineWidth:1.5};
+  }
+  else if(S.tool==='pen'&&S.penDrawing){
     var pl=S.penPts[S.penPts.length-1];
     var pp2=Math.max(0.05,e.pressure||0.5);
     var newPt={x:wp.x,y:wp.y,p:pp2};
-    var minDist=S.tool==='pencil'?1/S.scale:2/S.scale;
-    if(!pl||d2(pl,newPt)>minDist)S.penPts.push(newPt);
-    S.preview={type:'penpath',pts:S.penPts.slice(),color:S.col,lineWidth:S.penBaseSize||(S.tool==='pencil'?2.5:6)};
+    if(!pl||d2(pl,newPt)>2/S.scale)S.penPts.push(newPt);
+    S.preview={type:'penpath',pts:S.penPts.slice(),color:S.col,lineWidth:S.penBaseSize||6};
   } else if(S.tool==='polygon'&&S.polyPts2.length>0){
     S.preview={type:'polygon',pts:S.polyPts2.concat([sn]),closed:false,color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'};
   } else if(S.tool==='dimension'&&S.phase==='drawing'&&S.startPt){
@@ -1437,19 +1446,22 @@ function onPU(e){
   }
   if(S.tool==='dimension'&&S.startPt){if(d2(S.startPt,wp)>8){pushUndo();S.objs.push({id:nid(),type:'dimension',start:S.startPt,end:wp,color:'#1d4ed8',lineWidth:1.5});}S.preview=null;S.startPt=null;S.drawing=false;S.phase='idle';return;}
   if(S.tool==='dimension'&&S.startPt){if(d2(S.startPt,wp)>8){pushUndo();S.objs.push({id:nid(),type:'dimension',start:S.startPt,end:wp,color:'#1d4ed8',lineWidth:1.5});}S.preview=null;S.startPt=null;S.drawing=false;S.phase='idle';return;}
-  if(S.tool==='pen'||S.tool==='pencil'){
-    if(S.penPts.length>=2){
-      var isPencil=S.tool==='pencil';
-      var closeThresh=isPencil?30/S.scale:50/S.scale;
-      var penCls=d2(S.penPts[S.penPts.length-1],S.penPts[0])<closeThresh;
+  if(S.tool==='pencil'){
+    if(S.pencilPts&&S.pencilPts.length>2){
+      pushUndo();
+      S.objs.push({id:nid(),type:'pencil',pts:S.pencilPts.slice(),closed:false,color:S.col,lineWidth:1.5});
+    }
+    S.pencilPts=[];S.preview=null;S.drawing=false;S.phase='idle';return;
+  }
+  if(S.tool==='pen'){
+    if(S.penPts&&S.penPts.length>=2){
       var penFinal=[];
-      var step=isPencil?1:2;
-      for(var pi=0;pi<S.penPts.length;pi+=step)penFinal.push(S.penPts[pi]);
+      for(var pi=0;pi<S.penPts.length;pi+=2)penFinal.push(S.penPts[pi]);
       if(penFinal.length<2||penFinal[penFinal.length-1]!==S.penPts[S.penPts.length-1])penFinal.push(S.penPts[S.penPts.length-1]);
       if(penFinal.length>=2){
+        var penCls=d2(S.penPts[S.penPts.length-1],S.penPts[0])<50/S.scale;
         pushUndo();
-        var lw=S.penBaseSize||(isPencil?2.5:6);
-        S.objs.push({id:nid(),type:'penpath',pts:penFinal,closed:penCls,color:S.col,lineWidth:lw});
+        S.objs.push({id:nid(),type:'penpath',pts:penFinal,closed:penCls,color:S.col,lineWidth:S.penBaseSize||6});
         toast(penCls?'Shape closed \u2014 tap Fill to fill it':'Drawn \u2713');
       }
     }
@@ -1464,7 +1476,7 @@ function onPC(e){
   var isTouch = (e.pointerType === 'touch');
   if(isPen)  S.penDown=false;
   if(isTouch){ S.touchPtrs.delete(e.pointerId); if(S.touchPtrs.size<2)S.pinching=false; }
-  S.drawing=false;S.penPts=[];S.penDrawing=false;S.preview=null;S.phase='idle';S.lastPos=null;
+  S.drawing=false;S.penPts=[];S.pencilPts=[];S.penDrawing=false;S.preview=null;S.phase='idle';S.lastPos=null;
 }
 
 function kick(){
@@ -2240,7 +2252,7 @@ function exportPDF(){
     +'<div class="sum-card">'
     +'<div class="sum-card-hdr">Materials &amp; Measurements</div>'
     +(fillRows?'<table class="sum-tbl">'+fillRows+'</table>':'')
-    +(fillIds.length>1&&tot?'<div class="tot-bar"><span class="tot-l">TOTAL FILL</span><span class="tot-v">'+tot.toFixed(1)+' ft\u00B2</span></div>':'')
+    +(tot>0?'<div class="tot-bar"><span class="tot-l">TOTAL FILL</span><span class="tot-v">'+tot.toFixed(1)+' ft\u00B2</span></div>':'')
     +(curbRow||linRow?'<table class="sum-tbl">'+curbRow+linRow+'</table>':'')
     +(stampRows?'<table class="sum-tbl">'+stampRows+'</table>':'')
     +(!fillRows&&!curbRow&&!stampRows?noMeasure:'')
