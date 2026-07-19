@@ -706,19 +706,38 @@ function shapeLabel(ctx,o){
   if(mn<30)return;
   var mat=null;
   for(var i=0;i<MATS.length;i++){if(MATS[i].id===o.fill){mat=MATS[i];break;}}
+  var isCustom=o.fill==='custom';
+  var fg=isCustom?'rgba(255,255,255,0.95)':(mat?mat.fg:'rgba(30,41,59,0.85)');
   ctx.save();ctx.beginPath();tracePath(ctx,o);ctx.clip();
   ctx.textAlign='center';ctx.textBaseline='middle';
-  if(mat){
-    var fs=clamp(mn*0.082,8,14);
+  var lineCount=(o.areaLabel?1:0)+(mat&&!isCustom?1:0)+(sf?1:0);
+  var fs=clamp(mn*0.08,8,14);
+  var lineH=fs*1.4;
+  var totalH=lineCount*lineH;
+  var startY=c.y-totalH/2+lineH/2;
+  var lineIdx=0;
+  if(o.areaLabel){
     ctx.font='700 '+fs+'px system-ui,sans-serif';
-    ctx.fillStyle=mat.fg;
-    ctx.fillText(mat.sub,c.x,sf?c.y-fs*0.75:c.y);
+    ctx.fillStyle=fg;
+    ctx.fillText(o.areaLabel,c.x,startY+lineIdx*lineH);
+    lineIdx++;
+  }
+  if(mat&&!isCustom){
+    var fs2=clamp(mn*0.065,7,11);
+    ctx.font='600 '+fs2+'px system-ui,sans-serif';
+    ctx.fillStyle=fg;
+    ctx.globalAlpha=0.75;
+    ctx.fillText(mat.sub||mat.name,c.x,startY+lineIdx*lineH);
+    ctx.globalAlpha=1;
+    lineIdx++;
   }
   if(sf){
-    var fs2=clamp(mn*0.068,7,12);
-    ctx.font='500 '+fs2+'px system-ui,sans-serif';
-    ctx.fillStyle=mat?mat.fg:'rgba(30,41,59,0.85)';
-    ctx.fillText(fmtSq(sf),c.x,mat?c.y+fs2*1.15:c.y);
+    var fs3=clamp(mn*0.065,7,11);
+    ctx.font='500 '+fs3+'px system-ui,sans-serif';
+    ctx.fillStyle=fg;
+    ctx.globalAlpha=0.85;
+    ctx.fillText(fmtSq(sf),c.x,startY+lineIdx*lineH);
+    ctx.globalAlpha=1;
   }
   ctx.restore();
 }
@@ -1220,11 +1239,15 @@ function onPD(e){
           S.objs[oi2]=JSON.parse(JSON.stringify(S.objs[oi2]));
           S.objs[oi2].fill=S.mat;
           if(S.mat==='custom')S.objs[oi2].customColor=S.customFillColor;
+          if(!S.objs[oi2].areaLabel){
+            var filledCount=S.objs.filter(function(o){return o.fill;}).length;
+            S.objs[oi2].areaLabel='Area '+filledCount;
+          }
           break;
         }
       }
-      toast('Filled \u2713');
-    }else{toast('Tap inside a closed shape');}
+      toast('Filled \u2713 \u2014 name it in Summary');
+    }else{toast('Tap inside a closed shape to fill it');}
     return;
   }
 
@@ -1272,10 +1295,11 @@ function onPD(e){
   }
   if(S.tool==='dimension'){S.drawing=true;S.phase='drawing';S.startPt=snapPt(wp);return;}
   if(S.tool==='eraser'){for(var ei=S.objs.length-1;ei>=0;ei--){if(hitObj(S.objs[ei],wp)){pushUndo();S.objs.splice(ei,1);toast('Deleted');return;}}return;}
-  // Smooth Pen
-  if(S.tool==='pen'){
+  // Smooth Pen + Pencil (both use pressure-sensitive penpath)
+  if(S.tool==='pen'||S.tool==='pencil'){
     S.drawing=true;S.phase='drawing';
     var p0=Math.max(0.05,e.pressure||0.5);
+    S.penBaseSize=S.tool==='pencil'?2.5:(S.penSize||6);
     S.penPts=[{x:wp.x,y:wp.y,p:p0}];S.penDrawing=true;
     return;
   }
@@ -1330,12 +1354,13 @@ function onPM(e){
   }
   if(S.tool==='measure') S.preview={type:'line',start:S.startPt||wp,end:sn,color:'#3b82f6',lineWidth:1.5};
   else if(S.tool==='rect') S.preview={type:'rect',start:S.startPt||wp,end:sn,color:S.col,lineWidth:1.8};
-  else if(S.tool==='pen'&&S.penDrawing){
+  else if((S.tool==='pen'||S.tool==='pencil')&&S.penDrawing){
     var pl=S.penPts[S.penPts.length-1];
     var pp2=Math.max(0.05,e.pressure||0.5);
     var newPt={x:wp.x,y:wp.y,p:pp2};
-    if(!pl||d2(pl,newPt)>2/S.scale)S.penPts.push(newPt);
-    S.preview={type:'penpath',pts:S.penPts.slice(),color:S.col,lineWidth:S.penSize||6};
+    var minDist=S.tool==='pencil'?1/S.scale:2/S.scale;
+    if(!pl||d2(pl,newPt)>minDist)S.penPts.push(newPt);
+    S.preview={type:'penpath',pts:S.penPts.slice(),color:S.col,lineWidth:S.penBaseSize||(S.tool==='pencil'?2.5:6)};
   } else if(S.tool==='polygon'&&S.polyPts2.length>0){
     S.preview={type:'polygon',pts:S.polyPts2.concat([sn]),closed:false,color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'};
   } else if(S.tool==='dimension'&&S.phase==='drawing'&&S.startPt){
@@ -1403,19 +1428,23 @@ function onPU(e){
   }
   if(S.tool==='dimension'&&S.startPt){if(d2(S.startPt,wp)>8){pushUndo();S.objs.push({id:nid(),type:'dimension',start:S.startPt,end:wp,color:'#1d4ed8',lineWidth:1.5});}S.preview=null;S.startPt=null;S.drawing=false;S.phase='idle';return;}
   if(S.tool==='dimension'&&S.startPt){if(d2(S.startPt,wp)>8){pushUndo();S.objs.push({id:nid(),type:'dimension',start:S.startPt,end:wp,color:'#1d4ed8',lineWidth:1.5});}S.preview=null;S.startPt=null;S.drawing=false;S.phase='idle';return;}
-  if(S.tool==='pen'){
+  if(S.tool==='pen'||S.tool==='pencil'){
     if(S.penPts.length>=2){
-      var penCls=d2(S.penPts[S.penPts.length-1],S.penPts[0])<50/S.scale;
+      var isPencil=S.tool==='pencil';
+      var closeThresh=isPencil?30/S.scale:50/S.scale;
+      var penCls=d2(S.penPts[S.penPts.length-1],S.penPts[0])<closeThresh;
       var penFinal=[];
-      for(var pi=0;pi<S.penPts.length;pi+=2)penFinal.push(S.penPts[pi]);
+      var step=isPencil?1:2;
+      for(var pi=0;pi<S.penPts.length;pi+=step)penFinal.push(S.penPts[pi]);
       if(penFinal.length<2||penFinal[penFinal.length-1]!==S.penPts[S.penPts.length-1])penFinal.push(S.penPts[S.penPts.length-1]);
       if(penFinal.length>=2){
         pushUndo();
-        S.objs.push({id:nid(),type:'penpath',pts:penFinal,closed:penCls,color:S.col,lineWidth:S.penSize||6});
-        toast(penCls?'Shape closed \u2014 tap Fill tool to fill':'Line drawn \u2713');
+        var lw=S.penBaseSize||(isPencil?2.5:6);
+        S.objs.push({id:nid(),type:'penpath',pts:penFinal,closed:penCls,color:S.col,lineWidth:lw});
+        toast(penCls?'Shape closed \u2014 tap Fill to fill it':'Drawn \u2713');
       }
     }
-    S.penPts=[];S.penDrawing=false;S.preview=null;S.drawing=false;S.phase='idle';
+    S.penPts=[];S.penDrawing=false;S.penBaseSize=null;S.preview=null;S.drawing=false;S.phase='idle';
     return;
   }
   S.preview=null;S.drawing=false;S.phase='idle';
@@ -1837,27 +1866,34 @@ function renderSum(){
   if(!S.customItems)S.customItems=[];
   if(!S.sqftOverrides)S.sqftOverrides={};
 
-  // ── Fill areas (auto-calculated, sqft editable) ────────────────────────────
-  var fillIds=Object.keys(data.fillTotals);
-  if(fillIds.length||S.customItems.length){
-    html+='<div class="sum-sec"><div class="sum-sec-t">&#127807; Fill Areas <button onclick="addCustomItem()" style="float:right;background:rgba(34,197,94,0.2);color:#86efac;border:none;border-radius:5px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:700">+ Add</button></div>';
-    var tot=0;
-    // Auto-detected fills
-    for(var i=0;i<fillIds.length;i++){
-      var id=fillIds[i];
-      var sf=S.sqftOverrides[id]!==undefined?S.sqftOverrides[id]:data.fillTotals[id];
+  // ── Fill areas — one row per filled shape with editable name ─────────────
+  var filledObjs=S.objs.filter(function(o){return o.fill;});
+  if(!S.customItems)S.customItems=[];
+  if(!S.sqftOverrides)S.sqftOverrides={};
+  html+='<div class="sum-sec"><div class="sum-sec-t">&#127807; Fill Areas <button onclick="addCustomItem()" style="float:right;background:rgba(34,197,94,0.2);color:#86efac;border:none;border-radius:5px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:700">+ Add</button></div>';
+  var tot=0;
+  if(filledObjs.length||S.customItems.length){
+    for(var i=0;i<filledObjs.length;i++){
+      var fo2=filledObjs[i];
+      var fid2=fo2.id;
+      var sf=S.sqftOverrides[fid2]!==undefined?S.sqftOverrides[fid2]:sqFt(fo2);
+      if(!sf)sf=0;
       tot+=sf;
-      var mat=null;for(var mi=0;mi<MATS.length;mi++){if(MATS[mi].id===id){mat=MATS[mi];break;}}
-      html+='<div class="sum-row" id="srow-'+id+'">'
-        +'<div class="sum-sw" style="background:'+(mat?mat.sw:'#888')+'"></div>'
-        +'<div style="flex:1"><div class="sum-lbl">'+(mat?mat.name:id)+'</div></div>'
-        +'<input type="number" class="sqft-input" value="'+sf.toFixed(1)+'" min="0" step="0.5" '
-        +'<input type="number" class="sqft-input" data-fid="'+id+'" value="'+sf.toFixed(1)+'" min="0" step="0.5" onchange="handleSqftChange(this)" '
-        +'style="width:72px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#86efac;padding:3px 6px;font-size:12px;font-weight:700;text-align:right">'
-        +' <span style="color:#6b7280;font-size:10px">ft²</span>'
+      var mat=null;for(var mi=0;mi<MATS.length;mi++){if(MATS[mi].id===fo2.fill){mat=MATS[mi];break;}}
+      var swCol=fo2.fill==='custom'?(fo2.customColor||'#6366f1'):(mat?mat.sw:'#888');
+      var lbl=fo2.areaLabel||('Area '+(i+1));
+      html+='<div class="sum-row">'
+        +'<div class="sum-sw" style="background:'+swCol+';flex-shrink:0"></div>'
+        +'<div style="flex:1;display:flex;flex-direction:column;gap:2px">'
+        +'<input type="text" value="'+lbl+'" data-oid="'+fid2+'" onchange="setAreaLabel(this)" '
+        +'style="background:#111827;border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#f9fafb;padding:3px 7px;font-size:12px;font-weight:600;width:100%">'
+        +'<div style="color:#4b5563;font-size:10px">'+(mat?mat.name:(fo2.fill==='custom'?'Custom Color':fo2.fill))+'</div>'
+        +'</div>'
+        +'<input type="number" data-fid="'+fid2+'" value="'+sf.toFixed(1)+'" min="0" step="0.5" onchange="handleSqftChange(this)" '
+        +'style="width:64px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#86efac;padding:3px 6px;font-size:12px;font-weight:700;text-align:right;flex-shrink:0">'
+        +' <span style="color:#6b7280;font-size:10px;flex-shrink:0">ft²</span>'
         +'</div>';
     }
-    // Custom added items
     for(var ci=0;ci<S.customItems.length;ci++){
       var item=S.customItems[ci];
       html+='<div class="sum-row">'
@@ -1871,15 +1907,12 @@ function renderSum(){
         +'</div>';
       tot+=parseFloat(item.sqft)||0;
     }
-    if(fillIds.length+S.customItems.length>1){
+    if(filledObjs.length+S.customItems.length>1)
       html+='<div class="sum-tot"><span class="sum-tot-l">Total Fill Area</span><span class="sum-tot-v">'+tot.toFixed(1)+' ft²</span></div>';
-    }
-    html+='</div>';
   } else {
-    html+='<div class="sum-sec"><div class="sum-sec-t">&#127807; Fill Areas <button onclick="addCustomItem()" style="float:right;background:rgba(34,197,94,0.2);color:#86efac;border:none;border-radius:5px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:700">+ Add</button></div>';
-    html+='<div class="sum-empty">No filled shapes yet.<br>Draw and fill shapes, or tap + Add to add items manually.</div>';
-    html+='</div>';
+    html+='<div class="sum-empty">No filled shapes yet.<br>Draw a closed shape, select Fill tool, then tap inside it.</div>';
   }
+  html+='</div>';
 
   // ── Curbing ────────────────────────────────────────────────────────────────
   if(data.curbFt>0||S.sqftOverrides['__curb__']!==undefined){
@@ -1925,7 +1958,13 @@ function handleSqftChange(el){
 function setSqftOverride(id,val){
   if(!S.sqftOverrides)S.sqftOverrides={};
   S.sqftOverrides[id]=parseFloat(val)||0;
-  // Don't re-render (would lose focus) - just update total if visible
+}
+function setAreaLabel(el){
+  var oid=el.dataset.oid;
+  for(var i=0;i<S.objs.length;i++){
+    if(S.objs[i].id===oid){S.objs[i].areaLabel=el.value;break;}
+  }
+  render();
 }
 
 function addCustomItem(){
@@ -2086,9 +2125,6 @@ function loadProject(evt){
 
 // ── PDF Export ────────────────────────────────────────────────────────────────
 function exportPDF(){
-  // Open window immediately from user gesture so Safari doesn't block it
-  var win=window.open('','_blank');
-  if(win){win.document.write('<html><body style="background:#111827;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">&#127807;</div><div style="font-size:16px;font-weight:600">Building your proposal...</div></div></body></html>');win.document.close();}
   var pname=document.getElementById('sum-pname').value||'Site Plan';
   var cname=document.getElementById('sum-cname').value||'';
   var cemail=document.getElementById('sum-cemail').value||'';
@@ -2096,15 +2132,27 @@ function exportPDF(){
   var data=computeSummary();
   var now=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   var img=cv.toDataURL('image/png');
-  var fillIds=Object.keys(data.fillTotals),fillRows='',tot=0;
-  for(var i=0;i<fillIds.length;i++){
-    var id=fillIds[i],sf=data.fillTotals[id];tot+=sf;
-    var mat=null;for(var mi=0;mi<MATS.length;mi++){if(MATS[mi].id===id){mat=MATS[mi];break;}}
-    fillRows+='<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9"><span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:'+(mat?mat.sw:'#888')+';vertical-align:middle;margin-right:6px"></span>'+(mat?mat.name:id)+'</td>'
-      +'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#6b7280;font-size:11px">'+(mat?mat.sub:'')+'</td>'
+  // Per-shape fill rows with custom names
+  var filledObjs=S.objs.filter(function(o){return o.fill;});
+  var fillRows='',tot=0;
+  for(var i=0;i<filledObjs.length;i++){
+    var fo3=filledObjs[i];
+    var sf=(S.sqftOverrides&&S.sqftOverrides[fo3.id]!==undefined)?S.sqftOverrides[fo3.id]:sqFt(fo3);
+    if(!sf)sf=0;
+    tot+=sf;
+    var mat=null;for(var mi=0;mi<MATS.length;mi++){if(MATS[mi].id===fo3.fill){mat=MATS[mi];break;}}
+    var swCol=fo3.fill==='custom'?(fo3.customColor||'#6366f1'):(mat?mat.sw:'#888');
+    var aLabel=fo3.areaLabel||('Area '+(i+1));
+    var matName=fo3.fill==='custom'?'Custom Color':(mat?mat.name:fo3.fill);
+    fillRows+='<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9">'
+      +'<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:'+swCol+';vertical-align:middle;margin-right:6px"></span>'
+      +'<strong>'+aLabel+'</strong></td>'
+      +'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#6b7280;font-size:11px">'+matName+'</td>'
       +'<td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700;color:#16a34a">'+sf.toFixed(1)+' ft\u00B2</td></tr>';
   }
-  if(fillIds.length>1)fillRows+='<tr><td colspan="2" style="padding:10px 12px;font-weight:700">Total Fill Area</td><td style="padding:10px 12px;text-align:right;font-weight:800;font-size:15px;color:#16a34a">'+tot.toFixed(1)+' ft\u00B2</td></tr>';
+  // Custom added items
+  if(S.customItems){for(var ci3=0;ci3<S.customItems.length;ci3++){var cit=S.customItems[ci3];var csf=parseFloat(cit.sqft)||0;tot+=csf;fillRows+='<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9"><span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:'+cit.color+';vertical-align:middle;margin-right:6px"></span><strong>'+cit.name+'</strong></td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#6b7280;font-size:11px">Manual entry</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700;color:#16a34a">'+csf.toFixed(1)+' ft\u00B2</td></tr>';}}
+  if(filledObjs.length>1)fillRows+='<tr><td colspan="2" style="padding:10px 12px;font-weight:700">Total Fill Area</td><td style="padding:10px 12px;text-align:right;font-weight:800;font-size:15px;color:#16a34a">'+tot.toFixed(1)+' ft\u00B2</td></tr>';
   var curbRow=data.curbFt>0?'<tr><td colspan="2" style="padding:8px 12px;border-bottom:1px solid #f1f5f9">Concrete Curbing</td><td style="padding:8px 12px;text-align:right;font-weight:700">'+data.curbFt.toFixed(1)+' lin ft</td></tr>':'';
   var linRow=data.linFt>0.1?'<tr><td colspan="2" style="padding:8px 12px;border-bottom:1px solid #f1f5f9">Lines / Edges</td><td style="padding:8px 12px;text-align:right;font-weight:700">'+data.linFt.toFixed(1)+' lin ft</td></tr>':'';
   var stampRows='';var stampIds=Object.keys(data.stampCounts);
@@ -2212,13 +2260,18 @@ var _cn=cname||'Customer';
     _ciRows+='<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:10px 16px;font-size:10pt">'+(_row.desc||'')+'</td>'
       +'<td style="padding:10px 16px;text-align:right;font-size:10pt">'+(_price>0?'$'+_price.toLocaleString():'&mdash;')+'</td></tr>';
   }
-  // Add turf materials from drawing
+  // Add per-shape named fill areas from drawing
   var _matRows='';
-  for(var fi2=0;fi2<fillIds.length;fi2++){
-    var _fid=fillIds[fi2],_sf=data.fillTotals[_fid];
-    var _mat2=null;for(var mi2=0;mi2<MATS.length;mi2++){if(MATS[mi2].id===_fid){_mat2=MATS[mi2];break;}}
-    _matRows+='<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:10px 16px;font-size:10pt">'+(_mat2?_mat2.name:_fid)+'</td>'
-      +'<td style="padding:10px 16px;color:#6b7280;font-size:9pt">'+_sf.toFixed(1)+' sqft</td>'
+  var _filledObjs=S.objs.filter(function(o){return o.fill;});
+  for(var fi2=0;fi2<_filledObjs.length;fi2++){
+    var _fo=_filledObjs[fi2];
+    var _sf=(S.sqftOverrides&&S.sqftOverrides[_fo.id]!==undefined)?S.sqftOverrides[_fo.id]:sqFt(_fo);
+    if(!_sf)_sf=0;
+    var _mat2=null;for(var mi2=0;mi2<MATS.length;mi2++){if(MATS[mi2].id===_fo.fill){_mat2=MATS[mi2];break;}}
+    var _aLabel=_fo.areaLabel||('Area '+(fi2+1));
+    var _matName=_fo.fill==='custom'?'Custom Color':(_mat2?_mat2.name:_fo.fill);
+    _matRows+='<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:10px 16px;font-size:10pt"><strong>'+_aLabel+'</strong></td>'
+      +'<td style="padding:10px 16px;color:#6b7280;font-size:9pt">'+_matName+' &bull; '+_sf.toFixed(1)+' sqft</td>'
       +'<td style="padding:10px 16px;text-align:right;font-size:10pt">&mdash;</td></tr>';
   }
   if(data.curbFt>0){
@@ -2350,9 +2403,20 @@ var _cn=cname||'Customer';
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(cname?cname+' - ':'')+'ZeroScape Site Plan</title>'
   +'<style>'+css+'.no-print{display:block}@media print{.no-print{display:none!important}body{padding-top:0!important}}</style>'
   +'</head><body>'+toolbarHtml+coverHtml+drawHtml+contractHtml+sigHtml+'</body></html>';
-  if(win){win.document.open();win.document.write(html);win.document.close();}
-  else{var blob=new Blob([html],{type:'text/html'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=(cname||'ZeroScape')+'_SitePlan.html';a.click();setTimeout(function(){URL.revokeObjectURL(url);},60000);}
-  toast('PDF ready \u2014 tap Save as PDF at the top \u2713');
+  // Open window and write in one synchronous step \u2014 iOS Safari requires this
+  var win=window.open('','_blank');
+  if(win){win.document.write(html);win.document.close();}
+  else{
+    // Popup blocked \u2014 download as file instead
+    var blob=new Blob([html],{type:'text/html'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download=(cname||'ZeroScape')+'_SitePlan.html';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},60000);
+    toast('Saved \u2014 open the file and print to PDF');
+    return;
+  }
+  toast('PDF ready \u2014 tap \u201cSave as PDF\u201d at the top \u2713');
 }
 
 // ── Build UI ──────────────────────────────────────────────────────────────────
