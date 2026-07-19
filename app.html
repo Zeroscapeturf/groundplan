@@ -187,7 +187,6 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
     <button class="hb" onclick="undo()" title="Undo">&#8617;</button>
     <button class="hb" onclick="openProjects()">&#128193;<span class="hb-txt"> Projects</span></button>
     <button class="hb red" id="delbtn" style="display:none" onclick="deleteSel()">&#128465;</button>
-    <button class="hb" onclick="openSignModal()" title="Sign Contract" style="color:#22c55e;font-weight:700">&#9998; Sign</button>
     <button class="hb" onclick="clearAll()" title="Clear">&#10005;</button>
     <button class="hb" onclick="zoomIn()" style="min-width:34px" title="Zoom In">+</button>
     <button class="hb" onclick="zoomOut()" style="min-width:34px" title="Zoom Out">-</button>
@@ -206,7 +205,6 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
   <div id="toast"></div>
   <div id="chain-badge">
     <span id="chain-pts">0 pts</span>
-    <button class="cb" id="curve-toggle" onclick="toggleCurve()" style="background:rgba(255,255,255,0.07);color:#6b7280;font-size:9px">〜 Curved</button>
     <button class="cb cb-c" onclick="closeChain()">Close</button>
     <button class="cb cb-d" onclick="abandonChain()">Done</button>
   </div>
@@ -1670,10 +1668,12 @@ function commitChain(closed){
   if(S.chain.length>=2){
     pushUndo();
     var t=S.chainType==='curbing'?'curbchain':'lineshape';
-    var curved=S.chainType==='curbing'||S.chainCurved;
     var npts=S.chain.length;
-    S.objs.push({id:nid(),type:t,pts:S.chain.slice(),closed:closed,curved:curved,controls:new Array(closed?npts:npts-1).fill(null),color:S.col,lineWidth:S.chainType==='curbing'?(S.strokeWidth||4):(S.strokeWidth||2),lineStyle:S.lineStyle||'solid'});
-    if(closed)toast(S.chainType==='curbing'?'Curbing placed \u2713':(curved?'Curved shape closed \u2713':'Shape closed \u2713'));
+    var newId=nid();
+    S.objs.push({id:newId,type:t,pts:S.chain.slice(),closed:closed,curved:S.chainType==='curbing',controls:new Array(closed?npts:npts-1).fill(null),color:S.col,lineWidth:S.chainType==='curbing'?(S.strokeWidth||4):(S.strokeWidth||2),lineStyle:S.lineStyle||'solid'});
+    if(closed)toast(S.chainType==='curbing'?'Curbing placed \u2713':'Shape closed \u2713 \u2014 drag orange handles to curve segments');
+    else toast('Line drawn \u2713 \u2014 drag orange handles to curve segments');
+    setSel(newId);
   }
   S.chain=[];S.preview=null;S.phase='idle';
 }
