@@ -447,7 +447,7 @@ var S={
   arcPhase:0,arcCenter:null,arcRx:0,
   startPt:null,preview:null,snapPt:null,downSc:null,downTime:0,
   pinchD0:0,pinchS0:1,pinchM0:null,pinchPan0:null,
-  moveId:null,moveOffs:null,vertexIdx:-1,curveHandleIdx:-1,
+  moveId:null,moveOffs:null,vertexIdx:-1,curveHandleIdx:-1,lastDrawTool:null,
   calMode:false,calStart:null,calDrawing:false,calLine:null,
   activePanel:null,
   bg:{imgs:[],page:0,op:0.45,locked:true,x:0,y:0,w:0,h:0,dragStart:null},
@@ -1315,6 +1315,13 @@ function onPD(e){
     if(hit){
       setSel(hit.id);pushUndo();S.drawing=true;S.phase='dragging';S.moveId=hit.id;
       var cn2=centroid(hit);S.moveOffs=[{dx:cn2.x-wp.x,dy:cn2.y-wp.y}];
+    }else if(S.lastDrawTool){
+      // Tap on empty canvas — restart drawing with same tool
+      var ldt=S.lastDrawTool;
+      setSel(null);setTool(ldt);
+      if(ldt==='line'){S.startPt=wp;S.drawing=true;S.phase='drawing';}
+      else if(ldt==='curbing'){S.chain=[wp];S.chainType='curbing';S.drawing=true;S.phase='drawing';updChain();}
+      else if(ldt==='arc'){S.arcCenter=wp;S.arcPhase=1;S.drawing=true;S.phase='drawing';}
     }else{setSel(null);}
     return;
   }
@@ -1376,19 +1383,17 @@ function onPD(e){
     return;
   }
 
-  // Line / Curbing — tap chain
-  if(S.tool==='line'||S.tool==='curbing'){
-    var sn=snapPt(wp);
-    if(S.chain.length===0){
-      S.chain=[sn];S.chainType=S.tool;S.phase='drawing';
-      toast(S.tool==='curbing'?'Tap to trace \u2022 tap start dot to close':'Tap to add points \u2022 tap green dot to close');
-      updChain();
-    }else if(S.chain.length>2&&d2(sn,S.chain[0])<30/S.scale){
-      commitChain(true);updChain();
-    }else{
-      S.chain.push(sn);updChain();
-    }
+  // Line — drag from A to B
+  if(S.tool==='line'){
+    S.startPt=snapPt(wp);S.drawing=true;S.phase='drawing';
     return;
+  }
+
+  // Curbing — freehand drag
+  if(S.tool==='curbing'){
+    var sn=snapPt(wp);
+    S.chain=[sn];S.chainType='curbing';S.drawing=true;S.phase='drawing';
+    updChain();return;
   }
 
   if(S.tool==='polygon'){
@@ -1469,9 +1474,17 @@ function onPM(e){
   var sn=snapPt(wp);S.snapPt=sn;
   if(S.phase!=='drawing')return;
 
-  if(S.tool==='arc'){
-    if(S.arcPhase===1&&S.arcCenter){S.preview={type:'ellipse',center:S.arcCenter,rx:Math.max(4,Math.abs(wp.x-S.arcCenter.x)),ry:Math.max(4,Math.abs(wp.x-S.arcCenter.x)),color:S.col,lineWidth:1.8};}
-    else if(S.arcPhase===2&&S.arcCenter&&S.arcRx>0){S.preview={type:'ellipse',center:S.arcCenter,rx:S.arcRx,ry:Math.max(4,Math.abs(wp.y-S.arcCenter.y)),color:S.col,lineWidth:1.8};}
+  if(S.tool==='arc'&&S.arcPhase===1&&S.arcCenter){
+    S.preview={type:'ellipse',center:S.arcCenter,rx:Math.max(4,Math.abs(wp.x-S.arcCenter.x)),ry:Math.max(4,Math.abs(wp.y-S.arcCenter.y)),color:S.col,lineWidth:1.8};
+    return;
+  }
+  if(S.tool==='curbing'&&S.phase==='drawing'&&S.chain.length>0){
+    var ll=S.chain[S.chain.length-1];
+    if(d2(ll,wp)>4/S.scale){S.chain.push(wp);}
+    S.snapPt=wp;updChain();return;
+  }
+  if(S.tool==='line'&&S.phase==='drawing'&&S.startPt){
+    S.preview={type:'lineshape',pts:[S.startPt,sn],closed:false,color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'};
     return;
   }
   if(S.tool==='measure') S.preview={type:'line',start:S.startPt||wp,end:sn,color:'#3b82f6',lineWidth:1.5};
@@ -1530,19 +1543,40 @@ function onPU(e){
   if(S.phase==='bg-drag'){S.drawing=false;S.phase='idle';S.bg.dragStart=null;return;}
   if(S.phase==='curve-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.curveHandleIdx=-1;render();return;}
   if(S.phase==='dragging'||S.phase==='vtx-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.moveOffs=null;S.vertexIdx=-1;return;}
-  if(S.tool==='line'||S.tool==='curbing'){S.drawing=false;return;}
-  if(S.tool==='arc'){
-    if(S.arcPhase===1&&S.arcCenter){
-      var rx2=Math.abs(wp.x-S.arcCenter.x);
-      if(rx2<4){S.arcPhase=0;S.drawing=false;S.phase='idle';return;}
-      S.arcRx=rx2;S.arcPhase=2;S.phase='drawing';return;
-    }
-    if(S.arcPhase===2&&S.arcCenter&&S.arcRx>0){
+  // Line: drag-to-draw commit
+  if(S.tool==='line'&&S.startPt){
+    var ep=snapPt(wp);
+    if(d2(S.startPt,ep)>6/S.scale){
       pushUndo();
-      S.objs.push({id:nid(),type:'ellipse',center:S.arcCenter,rx:S.arcRx,ry:Math.max(4,Math.abs(wp.y-S.arcCenter.y)),color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'});
-      S.arcPhase=0;S.arcCenter=null;S.arcRx=0;S.preview=null;S.drawing=false;S.phase='idle';
+      var lid=nid();
+      S.objs.push({id:lid,type:'lineshape',pts:[S.startPt,ep],closed:false,curved:false,controls:[null],color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'});
+      S.lastDrawTool='line';setSel(lid);setTool('select');
+      toast('Line drawn — drag orange dot to curve it');
     }
-    return;
+    S.startPt=null;S.preview=null;S.drawing=false;S.phase='idle';return;
+  }
+  // Curbing: freehand commit
+  if(S.tool==='curbing'&&S.chain.length>=2){
+    var curbId=nid();
+    S.chain.push(snapPt(wp));
+    pushUndo();
+    S.objs.push({id:curbId,type:'curbchain',pts:S.chain.slice(),closed:false,curved:true,controls:new Array(S.chain.length-1).fill(null),color:S.col,lineWidth:S.strokeWidth||4,lineStyle:S.lineStyle||'solid'});
+    S.chain=[];S.preview=null;S.drawing=false;S.phase='idle';
+    S.lastDrawTool='curbing';setSel(curbId);setTool('select');
+    toast('Curbing drawn — drag handles to shape it');updChain();return;
+  }
+  if(S.tool==='curbing'){S.chain=[];S.drawing=false;S.phase='idle';updChain();return;}
+  // Arc/Circle: drag-to-draw commit
+  if(S.tool==='arc'&&S.arcPhase===1&&S.arcCenter){
+    var rx2=Math.abs(wp.x-S.arcCenter.x),ry2=Math.abs(wp.y-S.arcCenter.y);
+    if(rx2>4&&ry2>4){
+      pushUndo();
+      var aid=nid();
+      S.objs.push({id:aid,type:'ellipse',center:S.arcCenter,rx:rx2,ry:ry2,color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'});
+      S.lastDrawTool='arc';setSel(aid);setTool('select');
+      toast('Circle drawn ✓');
+    }
+    S.arcPhase=0;S.arcCenter=null;S.arcRx=0;S.preview=null;S.drawing=false;S.phase='idle';return;
   }
   if(S.tool==='measure'&&S.startPt){
     if(d2(S.startPt,wp)>5){pushUndo();S.objs.push({id:nid(),type:'line',start:S.startPt,end:wp,color:'#3b82f6',lineWidth:1.5});toast(fmtFt(pxFt(d2(S.startPt,wp))));}
