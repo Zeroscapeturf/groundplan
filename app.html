@@ -286,6 +286,15 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
       </div>
     </div>
   </div>
+  <!-- PDF overlay (avoids Safari popup blocking) -->
+  <div id="pdf-ov" style="display:none;position:fixed;inset:0;z-index:500;flex-direction:column;background:#fff">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1f2937;flex-shrink:0;gap:10px">
+      <button onclick="closePDFOv()" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer">&#8592; Back</button>
+      <span style="color:#9ca3af;font-size:12px;flex:1;text-align:center" id="pdf-ov-title">Proposal</span>
+      <button onclick="document.getElementById('pdf-frame').contentWindow.print()" style="background:#22c55e;color:#0f172a;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">&#128196; Save as PDF</button>
+    </div>
+    <iframe id="pdf-frame" style="flex:1;border:none;width:100%;background:#fff"></iframe>
+  </div>
   <!-- Label input modal -->
   <div id="label-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center;padding-bottom:env(safe-area-inset-bottom)">
     <div style="background:#1f2937;border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:20px">
@@ -2401,22 +2410,20 @@ var _cn=cname||'Customer';
     +(_hasSigs?'<div style="margin-top:40px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:9pt;color:#166534">&#10003; This document contains electronic signatures captured via ZeroScape GroundPlan on '+_today+'.</div>':'<div style="margin-top:40px;padding:12px 16px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:9pt;color:#92400e">&#9888; Signature fields are blank. Use the &ldquo;Sign&rdquo; button in GroundPlan to capture signatures, or sign this printed document in ink.</div>')
     +'</div>';
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(cname?cname+' - ':'')+'ZeroScape Site Plan</title>'
-  +'<style>'+css+'.no-print{display:block}@media print{.no-print{display:none!important}body{padding-top:0!important}}</style>'
-  +'</head><body>'+toolbarHtml+coverHtml+drawHtml+contractHtml+sigHtml+'</body></html>';
-  // Open window and write in one synchronous step \u2014 iOS Safari requires this
-  var win=window.open('','_blank');
-  if(win){win.document.write(html);win.document.close();}
-  else{
-    // Popup blocked \u2014 download as file instead
-    var blob=new Blob([html],{type:'text/html'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download=(cname||'ZeroScape')+'_SitePlan.html';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url);},60000);
-    toast('Saved \u2014 open the file and print to PDF');
-    return;
-  }
-  toast('PDF ready \u2014 tap \u201cSave as PDF\u201d at the top \u2713');
+  +'<style>'+css+'@media print{body{padding-top:0!important}}</style>'
+  +'</head><body>'+coverHtml+drawHtml+contractHtml+sigHtml+'</body></html>';
+  // Use in-app iframe \u2014 no popup needed, works reliably on iOS Safari
+  var ov=document.getElementById('pdf-ov');
+  var frame=document.getElementById('pdf-frame');
+  var lbl=document.getElementById('pdf-ov-title');
+  if(lbl)lbl.textContent=(cname||'Proposal')+' \u2014 ZeroScape Turf';
+  frame.srcdoc=html;
+  ov.style.display='flex';
+  closeSum();
+  toast('Tap \u201cSave as PDF\u201d to export \u2713');
+}
+function closePDFOv(){
+  document.getElementById('pdf-ov').style.display='none';
 }
 
 // ── Build UI ──────────────────────────────────────────────────────────────────
