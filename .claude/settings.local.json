@@ -12,7 +12,8 @@
       "Bash(git push *)",
       "Bash(cp /Users/daxraymond/Downloads/groundplan-deploy_5/app.html /Users/daxraymond/Downloads/groundplan-deploy/app.html *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

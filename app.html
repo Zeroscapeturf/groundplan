@@ -291,7 +291,8 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1f2937;flex-shrink:0;gap:10px">
       <button onclick="closePDFOv()" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer">&#8592; Back</button>
       <span style="color:#9ca3af;font-size:12px;flex:1;text-align:center" id="pdf-ov-title">Proposal</span>
-      <button onclick="document.getElementById('pdf-frame').contentWindow.print()" style="background:#22c55e;color:#0f172a;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">&#128196; Save as PDF</button>
+      <button onclick="sharePDF()" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer">&#128241; Text</button>
+      <button onclick="document.getElementById('pdf-frame').contentWindow.print()" style="background:#22c55e;color:#0f172a;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">&#128196; Save PDF</button>
     </div>
     <iframe id="pdf-frame" style="flex:1;border:none;width:100%;background:#fff"></iframe>
   </div>
@@ -338,6 +339,7 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
           <div style="color:#6b7280;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Customer</div>
           <div style="display:flex;flex-direction:column;gap:6px">
             <input type="text" id="sum-cname" placeholder="Customer name..." style="background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none;width:100%">
+            <input type="tel" id="sum-cphone" placeholder="Customer phone (for text share)..." style="background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none;width:100%">
             <input type="email" id="sum-cemail" placeholder="Customer email..." style="background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none;width:100%">
             <input type="text" id="sum-caddr" placeholder="Property address..." style="background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none;width:100%">
           </div>
@@ -443,7 +445,7 @@ var S={
   pan:{x:80,y:100},scale:1,vel:{x:0,y:0},rafPan:null,
   drawing:false,penDown:false,pinching:false,touchPtrs:new Map(),lastPos:null,phase:'idle',penSize:6,penSmooth:true,lineStyle:'solid',strokeWidth:2,polyPts2:[],
   chain:[],chainCol:'#111827',chainType:'line',chainCurved:false,
-  polyPts:[],pencilPts:[],pencilWidth:2,pencilStyle:'solid',
+  polyPts:[],pencilPts:[],pencilWidth:2,pencilStyle:'solid',prices:{},
   arcPhase:0,arcCenter:null,arcRx:0,
   startPt:null,preview:null,snapPt:null,downSc:null,downTime:0,
   pinchD0:0,pinchS0:1,pinchM0:null,pinchPan0:null,
@@ -1888,49 +1890,63 @@ function renderSum(){
   if(!S.customItems)S.customItems=[];
   if(!S.sqftOverrides)S.sqftOverrides={};
 
-  // ── Fill areas — one row per filled shape with editable name ─────────────
+  // ── Fill areas — one row per filled shape with editable name + price ───────
   var filledObjs=S.objs.filter(function(o){return o.fill;});
   if(!S.customItems)S.customItems=[];
   if(!S.sqftOverrides)S.sqftOverrides={};
-  html+='<div class="sum-sec"><div class="sum-sec-t">&#127807; Fill Areas <button onclick="addCustomItem()" style="float:right;background:rgba(34,197,94,0.2);color:#86efac;border:none;border-radius:5px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:700">+ Add</button></div>';
-  var tot=0;
+  if(!S.prices)S.prices={};
+  html+='<div class="sum-sec"><div class="sum-sec-t">&#127807; Areas &amp; Line Items <button onclick="addCustomItem()" style="float:right;background:rgba(34,197,94,0.2);color:#86efac;border:none;border-radius:5px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:700">+ Add Item</button></div>';
+  var grandTotal=0;
   if(filledObjs.length||S.customItems.length){
     for(var i=0;i<filledObjs.length;i++){
       var fo2=filledObjs[i];
       var fid2=fo2.id;
       var sf=S.sqftOverrides[fid2]!==undefined?S.sqftOverrides[fid2]:sqFt(fo2);
       if(!sf)sf=0;
-      tot+=sf;
+      var rate=S.prices[fid2]||0;
+      var rowTotal=sf*rate;
+      grandTotal+=rowTotal;
       var mat=null;for(var mi=0;mi<MATS.length;mi++){if(MATS[mi].id===fo2.fill){mat=MATS[mi];break;}}
       var swCol=fo2.fill==='custom'?(fo2.customColor||'#6366f1'):(mat?mat.sw:'#888');
       var lbl=fo2.areaLabel||('Area '+(i+1));
-      html+='<div class="sum-row">'
+      html+='<div class="sum-row" style="flex-wrap:wrap;gap:4px;align-items:center">'
         +'<div class="sum-sw" style="background:'+swCol+';flex-shrink:0"></div>'
-        +'<div style="flex:1;display:flex;flex-direction:column;gap:2px">'
         +'<input type="text" value="'+lbl+'" data-oid="'+fid2+'" onchange="setAreaLabel(this)" '
-        +'style="background:#111827;border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#f9fafb;padding:3px 7px;font-size:12px;font-weight:600;width:100%">'
-        +'<div style="color:#4b5563;font-size:10px">'+(mat?mat.name:(fo2.fill==='custom'?'Custom Color':fo2.fill))+'</div>'
+        +'style="flex:1;min-width:80px;background:#111827;border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#f9fafb;padding:3px 7px;font-size:12px;font-weight:600">'
+        +'<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">'
+        +'<input type="number" data-fid="'+fid2+'" value="'+sf.toFixed(1)+'" min="0" step="0.5" onchange="handleSqftChange(this);renderSum()" '
+        +'style="width:58px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#86efac;padding:3px 5px;font-size:12px;font-weight:700;text-align:right">'
+        +'<span style="color:#6b7280;font-size:10px">ft²</span>'
+        +'<span style="color:#4b5563;font-size:10px">×</span>'
+        +'<span style="color:#6b7280;font-size:10px">$</span>'
+        +'<input type="number" value="'+(rate||'')+'" min="0" step="0.01" placeholder="0" data-pid="'+fid2+'" onchange="S.prices[this.dataset.pid]=parseFloat(this.value)||0;renderSum()" '
+        +'style="width:52px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fbbf24;padding:3px 5px;font-size:12px;font-weight:700;text-align:right">'
+        +'<span style="color:#6b7280;font-size:9px">/ft²</span>'
         +'</div>'
-        +'<input type="number" data-fid="'+fid2+'" value="'+sf.toFixed(1)+'" min="0" step="0.5" onchange="handleSqftChange(this)" '
-        +'style="width:64px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#86efac;padding:3px 6px;font-size:12px;font-weight:700;text-align:right;flex-shrink:0">'
-        +' <span style="color:#6b7280;font-size:10px;flex-shrink:0">ft²</span>'
+        +'<div style="width:100%;text-align:right;color:'+(rowTotal>0?'#4ade80':'#4b5563')+';font-size:11px;font-weight:700;padding-right:2px">'
+        +(rowTotal>0?'= $'+rowTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')
+        +'</div>'
         +'</div>';
     }
     for(var ci=0;ci<S.customItems.length;ci++){
       var item=S.customItems[ci];
-      html+='<div class="sum-row">'
+      var iPrice=parseFloat(item.price)||0;
+      grandTotal+=iPrice;
+      html+='<div class="sum-row" style="flex-wrap:wrap;gap:4px;align-items:center">'
         +'<div class="sum-sw" style="background:'+item.color+';flex-shrink:0"></div>'
         +'<input type="text" value="'+item.name+'" data-ci="'+ci+'" data-field="name" onchange="handleCustomChange(this)" '
-        +'style="flex:1;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#f9fafb;padding:3px 6px;font-size:12px;margin-right:4px">'
-        +'<input type="number" value="'+item.sqft+'" min="0" step="0.5" data-ci="'+ci+'" data-field="sqft" onchange="handleCustomChange(this)" '
-        +'style="width:60px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#86efac;padding:3px 6px;font-size:12px;font-weight:700;text-align:right">'
-        +' <span style="color:#6b7280;font-size:10px">ft²</span>'
-        +' <button data-ci="'+ci+'" onclick="handleCustomRemove(this)" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:none;border-radius:4px;padding:3px 6px;cursor:pointer;font-size:10px;margin-left:4px">✕</button>'
+        +'style="flex:1;min-width:80px;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#f9fafb;padding:3px 6px;font-size:12px">'
+        +'<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">'
+        +'<span style="color:#6b7280;font-size:10px">$</span>'
+        +'<input type="number" value="'+(iPrice||'')+'" min="0" step="1" placeholder="0" data-ci="'+ci+'" data-field="price" onchange="handleCustomChange(this);renderSum()" '
+        +'style="width:72px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fbbf24;padding:3px 6px;font-size:12px;font-weight:700;text-align:right">'
+        +'<button data-ci="'+ci+'" onclick="handleCustomRemove(this)" style="background:rgba(239,68,68,0.2);color:#fca5a5;border:none;border-radius:4px;padding:3px 6px;cursor:pointer;font-size:10px">✕</button>'
+        +'</div>'
+        +'<div style="width:100%;text-align:right;color:'+(iPrice>0?'#4ade80':'#4b5563')+';font-size:11px;font-weight:700;padding-right:2px">'
+        +(iPrice>0?'= $'+iPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')
+        +'</div>'
         +'</div>';
-      tot+=parseFloat(item.sqft)||0;
     }
-    if(filledObjs.length+S.customItems.length>1)
-      html+='<div class="sum-tot"><span class="sum-tot-l">Total Fill Area</span><span class="sum-tot-v">'+tot.toFixed(1)+' ft²</span></div>';
   } else {
     html+='<div class="sum-empty">No filled shapes yet.<br>Draw a closed shape, select Fill tool, then tap inside it.</div>';
   }
@@ -1939,12 +1955,25 @@ function renderSum(){
   // ── Curbing ────────────────────────────────────────────────────────────────
   if(data.curbFt>0||S.sqftOverrides['__curb__']!==undefined){
     var cft=S.sqftOverrides['__curb__']!==undefined?S.sqftOverrides['__curb__']:data.curbFt;
+    var crate=S.prices['__curb__']||0;
+    var cTotal=cft*crate;
+    grandTotal+=cTotal;
     html+='<div class="sum-sec"><div class="sum-sec-t">&#9135; Concrete Curbing</div>'
-      +'<div class="sum-row"><div class="sum-lbl" style="flex:1">Total Curbing</div>'
-      +'<input type="number" class="sqft-input" value="'+cft.toFixed(1)+'" min="0" step="0.5" '
-      +'onchange="handleSqftChange(this)" data-fid="__curb__" '
-      +'style="width:72px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#86efac;padding:3px 6px;font-size:12px;font-weight:700;text-align:right">'
-      +' <span style="color:#6b7280;font-size:10px">lin ft</span>'
+      +'<div class="sum-row" style="flex-wrap:wrap;gap:4px;align-items:center">'
+      +'<div style="flex:1;color:#f9fafb;font-size:12px;font-weight:600">Total Curbing</div>'
+      +'<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">'
+      +'<input type="number" value="'+cft.toFixed(1)+'" min="0" step="0.5" data-fid="__curb__" onchange="handleSqftChange(this);renderSum()" '
+      +'style="width:60px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#86efac;padding:3px 5px;font-size:12px;font-weight:700;text-align:right">'
+      +'<span style="color:#6b7280;font-size:10px">lin ft</span>'
+      +'<span style="color:#4b5563;font-size:10px">×</span>'
+      +'<span style="color:#6b7280;font-size:10px">$</span>'
+      +'<input type="number" value="'+(crate||'')+'" min="0" step="0.01" placeholder="0" onchange="S.prices[\'__curb__\']=parseFloat(this.value)||0;renderSum()" '
+      +'style="width:52px;background:#111827;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fbbf24;padding:3px 5px;font-size:12px;font-weight:700;text-align:right">'
+      +'<span style="color:#6b7280;font-size:9px">/ft</span>'
+      +'</div>'
+      +'<div style="width:100%;text-align:right;color:'+(cTotal>0?'#4ade80':'#4b5563')+';font-size:11px;font-weight:700;padding-right:2px">'
+      +(cTotal>0?'= $'+cTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')
+      +'</div>'
       +'</div></div>';
   }
 
@@ -1959,6 +1988,24 @@ function renderSum(){
         +'<div class="sum-val">'+data.stampCounts[stid]+'</div></div>';
     }
     html+='</div>';
+  }
+
+  // ── Grand Total ────────────────────────────────────────────────────────────
+  html+='<div style="margin:12px 0 4px;padding:14px 16px;background:linear-gradient(135deg,rgba(21,128,61,0.3),rgba(34,197,94,0.15));border:1.5px solid rgba(34,197,94,0.4);border-radius:12px;display:flex;justify-content:space-between;align-items:center">'
+    +'<span style="color:#86efac;font-size:13px;font-weight:700;letter-spacing:0.5px">TOTAL PROJECT PRICE</span>'
+    +'<span style="color:#4ade80;font-size:18px;font-weight:800">$'+grandTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'
+    +'</div>';
+  if(grandTotal>0){
+    html+='<div style="display:flex;gap:8px;margin-bottom:4px">'
+      +'<div style="flex:1;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;text-align:center">'
+      +'<div style="color:#6b7280;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">50% Deposit</div>'
+      +'<div style="color:#f9fafb;font-size:13px;font-weight:800">$'+(grandTotal*0.5).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>'
+      +'</div>'
+      +'<div style="flex:1;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;text-align:center">'
+      +'<div style="color:#6b7280;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Balance Due</div>'
+      +'<div style="color:#f9fafb;font-size:13px;font-weight:800">$'+(grandTotal*0.5).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>'
+      +'</div>'
+      +'</div>';
   }
 
   document.getElementById('sum-content').innerHTML=html;
@@ -2273,41 +2320,54 @@ var _cn=cname||'Customer';
   var _ca=caddr||'';
   var _today=now;
   // ── Proposal pages matching ZeroScape PDF format ─────────────────────────
-  // Custom line items from summary panel
-  var _ci=S.customItems||[];
-  var _ciRows='';
-  var _lineTotal=0;
-  for(var ci2=0;ci2<_ci.length;ci2++){
-    var _row=_ci[ci2];
-    var _price=parseFloat(_row.price||0);
-    _lineTotal+=_price;
-    _ciRows+='<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:10px 16px;font-size:10pt">'+(_row.desc||'')+'</td>'
-      +'<td style="padding:10px 16px;text-align:right;font-size:10pt">'+(_price>0?'$'+_price.toLocaleString():'&mdash;')+'</td></tr>';
-  }
-  // Add per-shape named fill areas from drawing
+  var _prices=S.prices||{};
   var _matRows='';
+  var _lineTotal=0;
+  // Per-shape fill areas with real pricing
   var _filledObjs=S.objs.filter(function(o){return o.fill;});
   for(var fi2=0;fi2<_filledObjs.length;fi2++){
     var _fo=_filledObjs[fi2];
     var _sf=(S.sqftOverrides&&S.sqftOverrides[_fo.id]!==undefined)?S.sqftOverrides[_fo.id]:sqFt(_fo);
     if(!_sf)_sf=0;
+    var _rate=_prices[_fo.id]||0;
+    var _rowAmt=_sf*_rate;
+    _lineTotal+=_rowAmt;
     var _mat2=null;for(var mi2=0;mi2<MATS.length;mi2++){if(MATS[mi2].id===_fo.fill){_mat2=MATS[mi2];break;}}
     var _aLabel=_fo.areaLabel||('Area '+(fi2+1));
     var _matName=_fo.fill==='custom'?'Custom Color':(_mat2?_mat2.name:_fo.fill);
-    _matRows+='<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:10px 16px;font-size:10pt"><strong>'+_aLabel+'</strong></td>'
-      +'<td style="padding:10px 16px;color:#6b7280;font-size:9pt">'+_matName+' &bull; '+_sf.toFixed(1)+' sqft</td>'
-      +'<td style="padding:10px 16px;text-align:right;font-size:10pt">&mdash;</td></tr>';
+    _matRows+='<tr style="border-bottom:1px solid #e5e7eb">'
+      +'<td style="padding:10px 16px;font-size:10pt"><strong>'+_aLabel+'</strong></td>'
+      +'<td style="padding:10px 16px;color:#6b7280;font-size:9pt">'+_matName+' &bull; '+_sf.toFixed(1)+' sqft'
+      +(_rate>0?' @ $'+_rate.toFixed(2)+'/ft&sup2;':'')+'</td>'
+      +'<td style="padding:10px 16px;text-align:right;font-size:10pt;font-weight:700;color:#15803d">'+(_rowAmt>0?'$'+_rowAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'&mdash;')+'</td></tr>';
   }
-  if(data.curbFt>0){
+  // Curbing with pricing
+  var _cft=(S.sqftOverrides&&S.sqftOverrides['__curb__']!==undefined)?S.sqftOverrides['__curb__']:data.curbFt;
+  if(_cft>0){
+    var _crate=_prices['__curb__']||0;
+    var _cAmt=_cft*_crate;
+    _lineTotal+=_cAmt;
     _matRows+='<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:10px 16px;font-size:10pt">Concrete Curbing / Edging</td>'
-      +'<td style="padding:10px 16px;color:#6b7280;font-size:9pt">'+data.curbFt.toFixed(1)+' lin ft</td>'
-      +'<td style="padding:10px 16px;text-align:right;font-size:10pt">&mdash;</td></tr>';
+      +'<td style="padding:10px 16px;color:#6b7280;font-size:9pt">'+_cft.toFixed(1)+' lin ft'+(_crate>0?' @ $'+_crate.toFixed(2)+'/ft':'')+'</td>'
+      +'<td style="padding:10px 16px;text-align:right;font-size:10pt;font-weight:700;color:#15803d">'+(_cAmt>0?'$'+_cAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'&mdash;')+'</td></tr>';
+  }
+  // Custom line items
+  var _ci=S.customItems||[];
+  var _ciRows='';
+  for(var ci2=0;ci2<_ci.length;ci2++){
+    var _row=_ci[ci2];
+    var _price=parseFloat(_row.price||0);
+    _lineTotal+=_price;
+    _ciRows+='<tr style="border-bottom:1px solid #e5e7eb">'
+      +'<td style="padding:10px 16px;font-size:10pt"><strong>'+(_row.name||_row.desc||'Item')+'</strong></td>'
+      +'<td style="padding:10px 16px;color:#6b7280;font-size:9pt">Additional item</td>'
+      +'<td style="padding:10px 16px;text-align:right;font-size:10pt;font-weight:700;color:#15803d">'+(_price>0?'$'+_price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'&mdash;')+'</td></tr>';
   }
 
-  var _totalLine=_lineTotal>0?'<tr style="background:#f0fdf4"><td colspan="2" style="padding:12px 16px;font-weight:800;font-size:11pt">Total Project Price</td>'
-    +'<td style="padding:12px 16px;text-align:right;font-weight:800;font-size:13pt;color:#15803d">$'+_lineTotal.toLocaleString()+'</td></tr>':'';
+  var _totalLine='<tr style="background:#f0fdf4"><td colspan="2" style="padding:14px 16px;font-weight:800;font-size:11pt">TOTAL PROJECT PRICE</td>'
+    +'<td style="padding:14px 16px;text-align:right;font-weight:800;font-size:14pt;color:#15803d">$'+_lineTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td></tr>';
 
-  var _deposit50=_lineTotal>0?'<p style="margin:0;font-size:10pt"><strong>50% Deposit Due:</strong> $'+(_lineTotal*0.5).toLocaleString()+' &nbsp;&mdash;&nbsp; <strong>Balance on Completion:</strong> $'+(_lineTotal*0.5).toLocaleString()+'</p>':'';
+  var _deposit50=_lineTotal>0?'<p style="margin:0;font-size:10pt"><strong>50% Deposit Due:</strong> $'+(_lineTotal*0.5).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' &nbsp;&mdash;&nbsp; <strong>Balance on Completion:</strong> $'+(_lineTotal*0.5).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</p>':'';
 
   var _pageHeader='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:14px;border-bottom:2px solid #15803d">'
     +'<img src="'+logoSrc+'" style="height:44px" alt="ZeroScape Turf">'
@@ -2432,7 +2492,9 @@ var _cn=cname||'Customer';
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(cname?cname+' - ':'')+'ZeroScape Site Plan</title>'
   +'<style>'+css+'@media print{body{padding-top:0!important}}</style>'
   +'</head><body>'+coverHtml+drawHtml+contractHtml+sigHtml+'</body></html>';
-  // Use in-app iframe \u2014 no popup needed, works reliably on iOS Safari
+  // Store for sharing, then show in-app iframe
+  window._lastExportHtml=html;
+  window._lastExportName=(cname||'Proposal').replace(/[^a-z0-9]/gi,'_');
   var ov=document.getElementById('pdf-ov');
   var frame=document.getElementById('pdf-frame');
   var lbl=document.getElementById('pdf-ov-title');
@@ -2440,10 +2502,31 @@ var _cn=cname||'Customer';
   frame.srcdoc=html;
   ov.style.display='flex';
   closeSum();
-  toast('Tap \u201cSave as PDF\u201d to export \u2713');
+  toast('Tap \u201cSave PDF\u201d or \u201cText\u201d to share \u2713');
 }
 function closePDFOv(){
   document.getElementById('pdf-ov').style.display='none';
+}
+async function sharePDF(){
+  var html=window._lastExportHtml;
+  if(!html){toast('Open PDF first');return;}
+  var cphone=document.getElementById('sum-cphone');
+  var phone=cphone?cphone.value.replace(/\D/g,''):'';
+  var name=window._lastExportName||'ZeroScape_Proposal';
+  try{
+    var blob=new Blob([html],{type:'text/html'});
+    var file=new File([blob],name+'_Proposal.html',{type:'text/html'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'ZeroScape Turf Proposal',text:'Your ZeroScape Turf proposal is attached. Open it in your browser to review and sign.'});
+    } else if(navigator.share){
+      await navigator.share({title:'ZeroScape Turf Proposal',text:'ZeroScape Turf \u2014 your proposal is ready. Reply to request a copy.',url:window.location.href});
+    } else if(phone){
+      window.location.href='sms:'+phone+'?body=Hi! Your ZeroScape Turf proposal is ready. Reply to this message to receive a copy or call us at (385) 462-7420.';
+    } else {
+      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_Proposal.html';a.click();
+      toast('Saved \u2014 open in browser to share via text');
+    }
+  }catch(e){if(e.name!=='AbortError')toast('Could not share \u2014 try Save PDF');}
 }
 
 // ── Build UI ──────────────────────────────────────────────────────────────────
