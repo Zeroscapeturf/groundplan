@@ -449,7 +449,7 @@ var S={
   arcPhase:0,arcCenter:null,arcRx:0,
   startPt:null,preview:null,snapPt:null,downSc:null,downTime:0,
   pinchD0:0,pinchS0:1,pinchM0:null,pinchPan0:null,
-  moveId:null,moveOffs:null,vertexIdx:-1,
+  moveId:null,moveOffs:null,vertexIdx:-1,curveHandleIdx:-1,
   calMode:false,calStart:null,calDrawing:false,calLine:null,
   activePanel:null,
   bg:{imgs:[],page:0,op:0.45,locked:true,x:0,y:0,w:0,h:0,dragStart:null},
@@ -470,11 +470,61 @@ function polyArea(pts){
   for(var i=0;i<pts.length;i++){a+=(pts[j].x+pts[i].x)*(pts[j].y-pts[i].y);j=i;}
   return Math.abs(a)/2;
 }
+// Expand a lineshape's pts into many points (sampling bezier curves)
+function expandPts(o){
+  var raw=o.pts||[];if(!raw.length)return raw;
+  if(!o.controls)return raw;
+  var out=[raw[0]];
+  for(var i=0;i<raw.length-1;i++){
+    var c=o.controls[i];
+    if(c){
+      for(var s=1;s<=12;s++){var t=s/12;var mt=1-t;out.push({x:mt*mt*raw[i].x+2*mt*t*c.cx+t*t*raw[i+1].x,y:mt*mt*raw[i].y+2*mt*t*c.cy+t*t*raw[i+1].y});}
+    }else{out.push(raw[i+1]);}
+  }
+  return out;
+}
+// Collect all outline segments from every object (for enclosed region detection)
+function allBoundarySegs(){
+  var segs=[];
+  for(var i=0;i<S.objs.length;i++){
+    var o=S.objs[i];
+    if(o.type==='line'||o.type==='curbing'){segs.push([o.start,o.end]);}
+    else if(o.type==='rect'){
+      var x0=Math.min(o.start.x,o.end.x),x1=Math.max(o.start.x,o.end.x),y0=Math.min(o.start.y,o.end.y),y1=Math.max(o.start.y,o.end.y);
+      segs.push([{x:x0,y:y0},{x:x1,y:y0}],[{x:x1,y:y0},{x:x1,y:y1}],[{x:x1,y:y1},{x:x0,y:y1}],[{x:x0,y:y1},{x:x0,y:y0}]);
+    }else if(o.type==='ellipse'){
+      var N=32;for(var j=0;j<N;j++){var a0=j/N*Math.PI*2,a1=(j+1)/N*Math.PI*2;segs.push([{x:o.center.x+o.rx*Math.cos(a0),y:o.center.y+o.ry*Math.sin(a0)},{x:o.center.x+o.rx*Math.cos(a1),y:o.center.y+o.ry*Math.sin(a1)}]);}
+    }else if(o.pts&&o.pts.length>=2){
+      var pts2=expandPts(o);
+      for(var j2=0;j2<pts2.length-1;j2++)segs.push([pts2[j2],pts2[j2+1]]);
+      if(o.closed)segs.push([pts2[pts2.length-1],pts2[0]]);
+    }
+  }
+  return segs;
+}
+// Ray-segment intersection; returns t>=0 along ray, or -1
+function raySegT(ox,oy,dx,dy,ax,ay,bx,by){
+  var ex=bx-ax,ey=by-ay,den=dx*ey-dy*ex;
+  if(Math.abs(den)<1e-10)return -1;
+  var fx=ox-ax,fy=oy-ay,t=(fx*ey-fy*ex)/den,u=(fx*dy-fy*dx)/den;
+  return(t>=0&&u>=0&&u<=1)?t:-1;
+}
+// Shoot rays from pt in all directions; returns approx polygon or null if not enclosed
+function enclosedRegionPoly(pt){
+  var segs=allBoundarySegs(),N=90,maxR=8000,poly=[];
+  for(var i=0;i<N;i++){
+    var ang=i/N*Math.PI*2,dx=Math.cos(ang),dy=Math.sin(ang),minT=maxR;
+    for(var j=0;j<segs.length;j++){var t=raySegT(pt.x,pt.y,dx,dy,segs[j][0].x,segs[j][0].y,segs[j][1].x,segs[j][1].y);if(t>0.5&&t<minT)minT=t;}
+    if(minT>=maxR)return null;
+    poly.push({x:pt.x+dx*minT,y:pt.y+dy*minT});
+  }
+  return poly.length>=4?poly:null;
+}
 function sqFt(o){
   var p2=S.ppf*S.ppf;
   if(o.type==='rect')return Math.abs(o.end.x-o.start.x)*Math.abs(o.end.y-o.start.y)/p2;
   if(o.type==='ellipse')return Math.PI*o.rx*o.ry/p2;
-  if((o.type==='lineshape'||o.type==='curbchain'||o.type==='polygon')&&o.closed&&o.pts)return polyArea(o.pts)/p2;
+  if((o.type==='lineshape'||o.type==='curbchain'||o.type==='polygon')&&o.closed&&o.pts)return polyArea(expandPts(o))/p2;
   if(o.type==='pencil'&&o.closed&&o.pts)return polyArea(o.pts)/p2;
   if(o.type==='penpath'&&o.closed&&o.pts)return polyArea(o.pts)/p2;
   return null;
@@ -667,8 +717,11 @@ function tracePath(ctx,o){
   var pts=o.pts||[];
   if(!pts.length)return;
   ctx.moveTo(pts[0].x,pts[0].y);
-  if(o.type==='pencil'||o.type==='penpath'||o.type==='curbchain'||(o.type==='lineshape'&&o.curved))catmull(pts,ctx);
-  else{for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);}
+  if(o.type==='pencil'||o.type==='penpath'||o.type==='curbchain'){catmull(pts,ctx);}
+  else if((o.type==='lineshape')&&o.controls){
+    for(var i=1;i<pts.length;i++){var c=o.controls[i-1];if(c)ctx.quadraticCurveTo(c.cx,c.cy,pts[i].x,pts[i].y);else ctx.lineTo(pts[i].x,pts[i].y);}
+    if(o.closed){var cl=o.controls[pts.length-1];if(cl)ctx.quadraticCurveTo(cl.cx,cl.cy,pts[0].x,pts[0].y);}
+  }else{for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);}
   ctx.closePath();
 }
 
@@ -879,17 +932,37 @@ function drawObject(ctx,o,sel){
     [o.start,o.end].forEach(function(p){ctx.beginPath();ctx.arc(p.x,p.y,sel?4.5:3,0,Math.PI*2);ctx.fillStyle=sc;ctx.fill();});
   } else if(o.type==='lineshape'){
     var lpts=o.pts||[];if(lpts.length<2){ctx.restore();return;}
-    ctx.beginPath();
-    if(o.curved===true&&lpts.length>2){catmull(lpts,ctx);}
-    else{ctx.moveTo(lpts[0].x,lpts[0].y);for(var li=1;li<lpts.length;li++)ctx.lineTo(lpts[li].x,lpts[li].y);}
-    if(o.closed)ctx.closePath();ctx.stroke();
-    // Only show segment measurements for STRAIGHT lineshapes (not curved - they're misleading)
-    if(!o.curved){
-      for(var li2=0;li2<lpts.length-1;li2++){var lm=mid(lpts[li2],lpts[li2+1]);pill(ctx,fmtFt(pxFt(d2(lpts[li2],lpts[li2+1]))),lm.x,lm.y-5,'#f9fafb','rgba(15,20,30,0.8)');}
-      if(o.closed&&lpts.length>1){var ll=mid(lpts[lpts.length-1],lpts[0]);pill(ctx,fmtFt(pxFt(d2(lpts[lpts.length-1],lpts[0]))),ll.x,ll.y-5,'#f9fafb','rgba(15,20,30,0.8)');}
+    // Draw path: per-segment quadratic bezier if controls set, else straight
+    ctx.beginPath();ctx.moveTo(lpts[0].x,lpts[0].y);
+    for(var li=1;li<lpts.length;li++){
+      var lc=o.controls&&o.controls[li-1];
+      if(lc)ctx.quadraticCurveTo(lc.cx,lc.cy,lpts[li].x,lpts[li].y);
+      else ctx.lineTo(lpts[li].x,lpts[li].y);
     }
+    if(o.closed){var lc0=o.controls&&o.controls[lpts.length-1];if(lc0)ctx.quadraticCurveTo(lc0.cx,lc0.cy,lpts[0].x,lpts[0].y);else ctx.closePath();}
+    ctx.stroke();
+    // Segment length pills (straight segments only)
+    for(var li2=0;li2<lpts.length-1;li2++){if(!(o.controls&&o.controls[li2])){var lm=mid(lpts[li2],lpts[li2+1]);pill(ctx,fmtFt(pxFt(d2(lpts[li2],lpts[li2+1]))),lm.x,lm.y-5,'#f9fafb','rgba(15,20,30,0.8)');}}
+    // Endpoint dots
     lpts.forEach(function(p,i){ctx.beginPath();ctx.arc(p.x,p.y,i===0?5:3.5,0,Math.PI*2);ctx.fillStyle=i===0&&!o.closed?'#22c55e':sc;ctx.fill();});
+    if(o.closed){ctx.beginPath();ctx.arc(lpts[0].x,lpts[0].y,5,0,Math.PI*2);ctx.fillStyle='#22c55e';ctx.fill();}
     if(o.closed)shapeLabel(ctx,o);
+    // Curve handles when selected
+    if(sel&&lpts.length>=2){
+      var nsegs=lpts.length-(o.closed?0:1);
+      for(var hi=0;hi<nsegs;hi++){
+        var hA=lpts[hi],hB=hi<lpts.length-1?lpts[hi+1]:lpts[0];
+        var hc=o.controls&&o.controls[hi];
+        var hx=hc?hc.cx:(hA.x+hB.x)/2,hy=hc?hc.cy:(hA.y+hB.y)/2;
+        if(hc){
+          ctx.save();ctx.setLineDash([3/S.scale,3/S.scale]);ctx.strokeStyle='rgba(251,146,60,0.5)';ctx.lineWidth=1/S.scale;
+          ctx.beginPath();ctx.moveTo(hA.x,hA.y);ctx.lineTo(hc.cx,hc.cy);ctx.lineTo(hB.x,hB.y);ctx.stroke();ctx.restore();
+        }
+        ctx.beginPath();ctx.arc(hx,hy,5/S.scale,0,Math.PI*2);
+        ctx.fillStyle=hc?'#f97316':'rgba(249,115,22,0.45)';ctx.fill();
+        ctx.strokeStyle='#fff';ctx.lineWidth=1.2/S.scale;ctx.stroke();
+      }
+    }
   } else if(o.type==='rect'){
     var rx0=Math.min(o.start.x,o.end.x),rx1=Math.max(o.start.x,o.end.x),ry0=Math.min(o.start.y,o.end.y),ry1=Math.max(o.start.y,o.end.y);
     ctx.strokeRect(rx0,ry0,rx1-rx0,ry1-ry0);
@@ -1216,6 +1289,19 @@ function onPD(e){
     if(S.sel){
       var selO=getObjById(S.sel);
       if(selO){
+        // Curve handle drag on lineshape/curbchain
+        if(selO.type==='lineshape'||selO.type==='curbchain'){
+          var lp=selO.pts||[],nsegs=lp.length-(selO.closed?0:1);
+          var chr=18/S.scale;
+          for(var chi=0;chi<nsegs;chi++){
+            var chA=lp[chi],chB=chi<lp.length-1?lp[chi+1]:lp[0];
+            var chc=selO.controls&&selO.controls[chi];
+            var chx=chc?chc.cx:(chA.x+chB.x)/2,chy=chc?chc.cy:(chA.y+chB.y)/2;
+            if(Math.hypot(wp.x-chx,wp.y-chy)<chr){
+              pushUndo();S.drawing=true;S.phase='curve-drag';S.moveId=S.sel;S.curveHandleIdx=chi;return;
+            }
+          }
+        }
         var vr=14/S.scale,vpts=vtxPts(selO);
         for(var vi=0;vi<vpts.length;vi++){
           if(d2(wp,vpts[vi])<vr){pushUndo();S.drawing=true;S.phase='vtx-drag';S.moveId=S.sel;S.vertexIdx=vi;return;}
@@ -1257,7 +1343,18 @@ function onPD(e){
         }
       }
       toast('Filled \u2713 \u2014 name it in Summary');
-    }else{toast('Tap inside a closed shape to fill it');}
+    }else{
+      // Try to fill an area enclosed by multiple shapes (lines, rects, curbing, etc.)
+      var regionPoly=enclosedRegionPoly(wp);
+      if(regionPoly){
+        pushUndo();
+        var filledCount2=S.objs.filter(function(o){return o.fill;}).length;
+        var regionObj={id:nid(),type:'polygon',pts:regionPoly,closed:true,color:S.col,lineWidth:0,lineStyle:'solid',fill:S.mat,areaLabel:'Area '+(filledCount2+1)};
+        if(S.mat==='custom')regionObj.customColor=S.customFillColor;
+        S.objs.push(regionObj);
+        toast('Area filled \u2713 \u2014 name it in Summary');
+      }else{toast('Tap inside a closed shape, or draw connected lines that fully enclose an area');}
+    }
     return;
   }
 
@@ -1358,6 +1455,18 @@ function onPM(e){
   if(S.phase==='bg-drag'&&S.bg.dragStart){S.bg.x=S.bg.dragStart.ox+(wp.x-S.bg.dragStart.wx);S.bg.y=S.bg.dragStart.oy+(wp.y-S.bg.dragStart.wy);return;}
   if(S.phase==='dragging'&&S.moveId){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.moveId){S.objs[i]=moveWhole(S.objs[i],wp,S.moveOffs[0]);break;}}return;}
   if(S.phase==='vtx-drag'&&S.moveId){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.moveId){S.objs[i]=moveVtx(S.objs[i],S.vertexIdx,wp);break;}}return;}
+  if(S.phase==='curve-drag'&&S.moveId){
+    for(var i=0;i<S.objs.length;i++){
+      if(S.objs[i].id===S.moveId){
+        var co=S.objs[i];
+        if(!co.controls)co.controls=new Array(co.pts?co.pts.length-1:0).fill(null);
+        while(co.controls.length<(co.pts?co.pts.length-(co.closed?0:1):0))co.controls.push(null);
+        co.controls[S.curveHandleIdx]={cx:wp.x,cy:wp.y};
+        break;
+      }
+    }
+    render();return;
+  }
 
   var sn=snapPt(wp);S.snapPt=sn;
   if(S.phase!=='drawing')return;
@@ -1421,6 +1530,7 @@ function onPU(e){
     S.calDrawing=false;S.calStart=null;S.preview=null;S.drawing=false;S.phase='idle';return;
   }
   if(S.phase==='bg-drag'){S.drawing=false;S.phase='idle';S.bg.dragStart=null;return;}
+  if(S.phase==='curve-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.curveHandleIdx=-1;render();return;}
   if(S.phase==='dragging'||S.phase==='vtx-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.moveOffs=null;S.vertexIdx=-1;return;}
   if(S.tool==='line'||S.tool==='curbing'){S.drawing=false;return;}
   if(S.tool==='arc'){
@@ -1561,7 +1671,8 @@ function commitChain(closed){
     pushUndo();
     var t=S.chainType==='curbing'?'curbchain':'lineshape';
     var curved=S.chainType==='curbing'||S.chainCurved;
-    S.objs.push({id:nid(),type:t,pts:S.chain.slice(),closed:closed,curved:curved,color:S.col,lineWidth:S.chainType==='curbing'?(S.strokeWidth||4):(S.strokeWidth||2),lineStyle:S.lineStyle||'solid'});
+    var npts=S.chain.length;
+    S.objs.push({id:nid(),type:t,pts:S.chain.slice(),closed:closed,curved:curved,controls:new Array(closed?npts:npts-1).fill(null),color:S.col,lineWidth:S.chainType==='curbing'?(S.strokeWidth||4):(S.strokeWidth||2),lineStyle:S.lineStyle||'solid'});
     if(closed)toast(S.chainType==='curbing'?'Curbing placed \u2713':(curved?'Curved shape closed \u2713':'Shape closed \u2713'));
   }
   S.chain=[];S.preview=null;S.phase='idle';
