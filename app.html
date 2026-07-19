@@ -690,6 +690,7 @@ function renderFill(ctx,o){
 
 // ── Pill label ────────────────────────────────────────────────────────────────
 function pill(ctx,txt,x,y,fg,bg){
+  if(S.exportClean)return;
   ctx.save();
   // Scale font and pill size inversely with zoom so labels stay readable
   var sc=S.scale,fs=clamp(13/sc,8,32),pad=6/sc,ph2=fs+pad*2,pr=4/sc;
@@ -2152,7 +2153,9 @@ function exportPDF(){
   var caddr=document.getElementById('sum-caddr').value||'';
   var data=computeSummary();
   var now=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  S.exportClean=true;render();
   var img=cv.toDataURL('image/png');
+  S.exportClean=false;render();
   // Per-shape fill rows with custom names
   var filledObjs=S.objs.filter(function(o){return o.fill;});
   var fillRows='',tot=0;
