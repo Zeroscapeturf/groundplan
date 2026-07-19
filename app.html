@@ -367,21 +367,19 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
       <span class="al">Color</span>
     </button>
     <button class="ab" onclick="doneAct()"><span class="al">&#10003; Done</span></button>
-    <div id="line-style-btns" style="display:none;gap:3px;align-items:center">
-      <button class="ab" id="ls-solid" onclick="setLineStyle('solid')" style="font-size:11px;padding:3px 7px;background:rgba(34,197,94,0.3)">&#9135; Solid</button>
-      <button class="ab" id="ls-dashed" onclick="setLineStyle('dashed')" style="font-size:11px;padding:3px 7px">&#8212;&#8212; Dash</button>
-      <button class="ab" id="ls-dotted" onclick="setLineStyle('dotted')" style="font-size:11px;padding:3px 7px">&#8226;&#8226;&#8226; Dot</button>
-      <span style="font-size:11px;color:#9ca3af;margin-left:4px">W:</span>
-      <input type="range" id="sw-slider" min="1" max="12" value="2" step="0.5"
-        style="width:60px;accent-color:#22c55e"
-        oninput="S.strokeWidth=+this.value">
-    </div>
     <div id="line-style-btns" style="display:none;gap:4px;align-items:center">
       <button class="ab" id="ls-solid" onclick="setLineStyle('solid')" style="font-size:11px;padding:3px 8px;background:rgba(34,197,94,0.3)">&#9135; Solid</button>
       <button class="ab" id="ls-dashed" onclick="setLineStyle('dashed')" style="font-size:11px;padding:3px 8px">&#8212; Dash</button>
       <button class="ab" id="ls-dotted" onclick="setLineStyle('dotted')" style="font-size:11px;padding:3px 8px">&#8226;&#8226; Dot</button>
       <span style="font-size:11px;color:#9ca3af;margin-left:2px">W:</span>
       <input type="range" id="sw-slider" min="1" max="12" value="2" step="0.5" style="width:55px;accent-color:#22c55e" oninput="S.strokeWidth=+this.value">
+    </div>
+    <div id="pencil-opts" style="display:none;gap:4px;align-items:center">
+      <button class="ab" id="pcl-solid" onclick="setPencilStyle('solid')" style="font-size:11px;padding:3px 8px;background:rgba(34,197,94,0.3)">&#9135; Solid</button>
+      <button class="ab" id="pcl-dashed" onclick="setPencilStyle('dashed')" style="font-size:11px;padding:3px 8px">&#8212; Dash</button>
+      <button class="ab" id="pcl-dotted" onclick="setPencilStyle('dotted')" style="font-size:11px;padding:3px 8px">&#8226;&#8226; Dot</button>
+      <span style="font-size:11px;color:#9ca3af;margin-left:2px">W:</span>
+      <input type="range" id="pcl-slider" min="1" max="16" value="2" step="0.5" style="width:55px;accent-color:#22c55e" oninput="S.pencilWidth=+this.value">
     </div>
     <div id="rot-btns" style="display:none;gap:3px;align-items:center;flex-wrap:wrap;justify-content:center">
       <button class="ab" onclick="rotatePaver(-15)" title="Rotate -15°"><span class="al">&#8630; 15°</span></button>
@@ -445,7 +443,7 @@ var S={
   pan:{x:80,y:100},scale:1,vel:{x:0,y:0},rafPan:null,
   drawing:false,penDown:false,pinching:false,touchPtrs:new Map(),lastPos:null,phase:'idle',penSize:6,penSmooth:true,lineStyle:'solid',strokeWidth:2,polyPts2:[],
   chain:[],chainCol:'#111827',chainType:'line',chainCurved:false,
-  polyPts:[],pencilPts:[],
+  polyPts:[],pencilPts:[],pencilWidth:2,pencilStyle:'solid',
   arcPhase:0,arcCenter:null,arcRx:0,
   startPt:null,preview:null,snapPt:null,downSc:null,downTime:0,
   pinchD0:0,pinchS0:1,pinchM0:null,pinchPan0:null,
@@ -1371,7 +1369,7 @@ function onPM(e){
   else if(S.tool==='pencil'&&S.pencilPts){
     var pl0=S.pencilPts[S.pencilPts.length-1];
     if(!pl0||d2(pl0,wp)>1/S.scale)S.pencilPts.push(wp);
-    S.preview={type:'pencil',pts:S.pencilPts.slice(),color:S.col,lineWidth:1.5};
+    S.preview={type:'pencil',pts:S.pencilPts.slice(),color:S.col,lineWidth:S.pencilWidth||2,lineStyle:S.pencilStyle||'solid'};
   }
   else if(S.tool==='pen'&&S.penDrawing){
     var pl=S.penPts[S.penPts.length-1];
@@ -1449,7 +1447,7 @@ function onPU(e){
   if(S.tool==='pencil'){
     if(S.pencilPts&&S.pencilPts.length>2){
       pushUndo();
-      S.objs.push({id:nid(),type:'pencil',pts:S.pencilPts.slice(),closed:false,color:S.col,lineWidth:1.5});
+      S.objs.push({id:nid(),type:'pencil',pts:S.pencilPts.slice(),closed:false,color:S.col,lineWidth:S.pencilWidth||2,lineStyle:S.pencilStyle||'solid'});
     }
     S.pencilPts=[];S.preview=null;S.drawing=false;S.phase='idle';return;
   }
@@ -1492,6 +1490,7 @@ function zoomIn(){var f=1.25,cx=cv.width/2,cy=cv.height/2;S.scale=Math.min(16,S.
 function zoomOut(){var f=1/1.25,cx=cv.width/2,cy=cv.height/2;S.scale=Math.max(0.04,S.scale*f);S.pan={x:cx-(cx-S.pan.x)*f,y:cy-(cy-S.pan.y)*f};}
 function zoomFit(){if(!S.objs.length){S.scale=1;S.pan={x:80,y:100};return;}var xs=[],ys=[];S.objs.forEach(function(o){var b=bbox(o);xs.push(b.x0,b.x1);ys.push(b.y0,b.y1);});var pad=40,mnx=Math.min.apply(null,xs),mxx=Math.max.apply(null,xs),mny=Math.min.apply(null,ys),mxy=Math.max.apply(null,ys);S.scale=Math.min((cv.width-pad*2)/Math.max(1,mxx-mnx),(cv.height-pad*2)/Math.max(1,mxy-mny),12);S.pan={x:pad-mnx*S.scale,y:pad-mny*S.scale};}
 function setLineStyle(style){S.lineStyle=style;['solid','dashed','dotted'].forEach(function(s){var b=document.getElementById('ls-'+s);if(b)b.style.background=s===style?'rgba(34,197,94,0.3)':'';});if(S.sel){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.sel){pushUndo();S.objs[i]=JSON.parse(JSON.stringify(S.objs[i]));S.objs[i].lineStyle=style;break;}}}}
+function setPencilStyle(style){S.pencilStyle=style;['solid','dashed','dotted'].forEach(function(s){var b=document.getElementById('pcl-'+s);if(b)b.style.background=s===style?'rgba(34,197,94,0.3)':'';});if(S.sel){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.sel&&S.objs[i].type==='pencil'){pushUndo();S.objs[i]=JSON.parse(JSON.stringify(S.objs[i]));S.objs[i].lineStyle=style;S.objs[i].lineWidth=S.pencilWidth||2;break;}}}render();}
 function openSignModal(){
   var m=document.getElementById('sig-modal');
   if(m)m.style.display='flex';
@@ -1616,6 +1615,7 @@ function setTool(t){
   updHint();updFill();updStamp();updChain();
 
   var penOpts=document.getElementById('pen-opts');if(penOpts)penOpts.style.display=(t==='pen')?'flex':'none';
+  var pclOpts=document.getElementById('pencil-opts');if(pclOpts)pclOpts.style.display=(t==='pencil')?'flex':'none';
   var lsPanel=document.getElementById('line-style-btns');
   if(lsPanel)lsPanel.style.display=['line','curbing','rect','arc','polygon','dimension'].indexOf(t)>=0?'flex':'none';}
 function setMat(id){
@@ -2397,6 +2397,11 @@ var _cn=cname||'Customer';
     +'</div>'
     +'</div>';
 
+  var _custSigHtml='<div style="border-bottom:2px solid #111;height:60px;margin-bottom:6px"></div>';
+  var _repSigHtml='<div style="border-bottom:2px solid #111;height:60px;margin-bottom:6px"></div>';
+  var _custDate='';
+  var _repDate='';
+  var _hasSigs=false;
   var sigHtml='<div class="page" style="padding:56px;font-family:Georgia,serif;color:#111">'
     +'<div style="text-align:center;margin-bottom:40px">'
     +'<div style="font-size:18pt;font-weight:800;color:#15803d">ZeroScape Turf</div>'
