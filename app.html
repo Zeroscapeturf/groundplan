@@ -341,6 +341,17 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
             <input type="email" id="sum-cemail" placeholder="Customer email..." style="background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none;width:100%">
             <input type="text" id="sum-caddr" placeholder="Property address..." style="background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none;width:100%">
           </div>
+          <div style="color:#6b7280;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">Cover Photo</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <div id="cover-photo-preview" style="width:60px;height:40px;border-radius:6px;background:#1f2937;border:1px solid rgba(255,255,255,0.1);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+              <span id="cover-photo-icon" style="color:#4b5563;font-size:16px">&#128247;</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+              <label style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;display:block" onclick="document.getElementById('cover-photo-input').click()">&#128247; Set Cover Photo</label>
+              <button onclick="S.coverPhoto=null;document.getElementById('cover-photo-icon').style.display='';document.getElementById('cover-photo-preview').style.backgroundImage='';toast('Cover photo removed')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer">Remove</button>
+            </div>
+          </div>
+          <input type="file" id="cover-photo-input" accept="image/*" style="display:none" onchange="(function(f){if(!f)return;var r=new FileReader();r.onload=function(e){S.coverPhoto=e.target.result;var p=document.getElementById('cover-photo-preview');p.style.backgroundImage='url('+e.target.result+')';p.style.backgroundSize='cover';p.style.backgroundPosition='center';document.getElementById('cover-photo-icon').style.display='none';toast('Cover photo set ✓');};r.readAsDataURL(f);})(this.files[0])">
           <div style="color:#6b7280;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">Project</div>
           <div id="sum-pname-row" style="display:flex;align-items:center;gap:8px">
             <input type="text" id="sum-pname" placeholder="Project name..." style="flex:1;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none">
@@ -441,7 +452,7 @@ var SCOLS=['#111827','#374151','#6b7280','#ffffff','#22c55e','#3b82f6','#ef4444'
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var S={
-  tool:'pen',mat:'turf',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',
+  tool:'pen',mat:'turf',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',coverPhoto:null,
   ppf:40,objs:[],sel:null,hist:[],
   pan:{x:80,y:100},scale:1,vel:{x:0,y:0},rafPan:null,
   drawing:false,penDown:false,pinching:false,touchPtrs:new Map(),lastPos:null,phase:'idle',penSize:6,penSmooth:true,lineStyle:'solid',strokeWidth:2,polyPts2:[],
@@ -1857,6 +1868,7 @@ setInterval(function(){
       customItems:S.customItems||[],
       sqftOverrides:S.sqftOverrides||{},
       projectName:document.getElementById('sum-pname')?document.getElementById('sum-pname').value:'',
+      coverPhoto:S.coverPhoto||null,
       customerName:document.getElementById('sum-cname')?document.getElementById('sum-cname').value:'',
       customerEmail:document.getElementById('sum-cemail')?document.getElementById('sum-cemail').value:'',
       customerAddr:document.getElementById('sum-caddr')?document.getElementById('sum-caddr').value:''
@@ -2462,6 +2474,7 @@ function loadProject(evt){
         S.objs=data.objects;if(data.ppf)S.ppf=data.ppf;if(data.pan)S.pan=data.pan;if(data.scale)S.scale=data.scale;
         if(data.projectName)document.getElementById('sum-pname').value=data.projectName;
         if(data.customerName)document.getElementById('sum-cname').value=data.customerName;
+        if(data.coverPhoto)S.coverPhoto=data.coverPhoto;
         if(data.customerEmail)document.getElementById('sum-cemail').value=data.customerEmail;
         if(data.customerAddr)document.getElementById('sum-caddr').value=data.customerAddr;
         if(data.customItems)S.customItems=data.customItems;
@@ -2523,7 +2536,7 @@ function exportPDF(){
     +'.cov-logo{height:56px;object-fit:contain}'
     +'.cov-label{color:#22c55e;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}'
     +'.cov-title{color:#fff;font-size:26px;font-weight:800}'
-    +'.cov-hero{flex:1;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center;padding:40px;min-height:260px}'
+    +'.cov-hero{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:40px;min-height:260px}'
     +'.cov-hero-inner{text-align:center}'
     +'.cov-hero-name{color:#fff;font-size:30px;font-weight:800;margin-bottom:6px}'
     +'.cov-hero-addr{color:#9ca3af;font-size:15px}'
@@ -2558,8 +2571,9 @@ function exportPDF(){
     +'<img class="cov-logo" src="'+logoSrc+'" alt="ZeroScape Turf">'
     +'<div style="text-align:right"><div class="cov-label">GroundPlan</div><div class="cov-title">Site Plan</div></div>'
     +'</div>'
-    +'<div class="cov-hero">'
-    +'<div class="cov-hero-inner">'
+    +'<div class="cov-hero" style="'+(S.coverPhoto?'background-image:url('+S.coverPhoto+');background-size:cover;background-position:center':'background:linear-gradient(135deg,#1f2937,#374151)')+'">'
+    +(S.coverPhoto?'<div style="position:absolute;inset:0;background:rgba(0,0,0,0.52)"></div>':'')
+    +'<div class="cov-hero-inner" style="position:relative;z-index:1">'"
     +'<div style="color:#22c55e;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Prepared For</div>'
     +'<div class="cov-hero-name">'+(cname||'Your Project')+'</div>'
     +'<div class="cov-hero-addr">'+(caddr||'')+'</div>'
@@ -2770,9 +2784,38 @@ var _cn=cname||'Customer';
     +'</table>'
     +(_hasSigs?'<div style="margin-top:40px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:9pt;color:#166534">&#10003; This document contains electronic signatures captured via ZeroScape GroundPlan on '+_today+'.</div>':'<div style="margin-top:40px;padding:12px 16px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:9pt;color:#92400e">&#9888; Signature fields are blank. Use the &ldquo;Sign&rdquo; button in GroundPlan to capture signatures, or sign this printed document in ink.</div>')
     +'</div>';
+  // ── Client-facing signature modal (embedded in shared proposal) ────────────
+  var clientSignModal='<div id="csm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif">'
+    +'<div style="background:#fff;border-radius:16px;max-width:520px;width:92%;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">'
+    +'<div style="text-align:center;margin-bottom:20px">'
+    +'<div style="font-size:22px;font-weight:800;color:#15803d">ZeroScape Turf</div>'
+    +'<div style="font-size:14px;color:#555;margin-top:6px">Please review and sign your proposal</div>'
+    +'</div>'
+    +'<p style="font-size:13px;color:#374151;margin:0 0 18px 0">By signing below you agree to the terms and conditions outlined in this proposal. Your electronic signature is legally binding.</p>'
+    +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:8px">Your Signature</div>'
+    +'<canvas id="csc" width="456" height="160" style="border:2px solid #d1d5db;border-radius:10px;display:block;width:100%;touch-action:none;cursor:crosshair;background:#f9fafb"></canvas>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'
+    +'<button onclick="(function(){var cv=document.getElementById('csc');var ct=cv.getContext('2d');ct.clearRect(0,0,cv.width,cv.height);})()" style="background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer;padding:4px 0">&#10006; Clear</button>'
+    +'<div style="font-size:11px;color:#9ca3af">Sign above with finger or stylus</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;margin-top:20px">'
+    +'<button onclick="(function(){document.getElementById('csm').style.display='none';})()" style="flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Review Later</button>'
+    +'<button onclick="(function(){var cv=document.getElementById('csc');var blank=document.createElement('canvas');blank.width=cv.width;blank.height=cv.height;if(cv.toDataURL()===blank.toDataURL()){alert('Please sign before accepting.');return;}var sig=cv.toDataURL('image/png');document.querySelectorAll('.sig-field').forEach(function(el){el.innerHTML='<img src=\''+sig+'\' style=\"max-width:200px;max-height:60px;display:block\">';});document.getElementById('csm').style.display='none';var conf=document.createElement('div');conf.style.cssText='position:fixed;bottom:24px;right:24px;background:#15803d;color:#fff;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.3);z-index:9999';conf.textContent='✓ Signed — save as PDF to complete';document.body.appendChild(conf);setTimeout(function(){conf.remove();},4000);})()" style="flex:2;padding:12px;background:#15803d;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">&#9998; Accept &amp; Sign</button>'
+    +'</div>'
+    +'</div>'
+    +'</div>'
+    +'<script>(function(){'
+    +'var cv=document.getElementById('csc');var ct=cv.getContext('2d');var drawing=false;var lr=cv.getBoundingClientRect();'
+    +'function pos(e){var r=cv.getBoundingClientRect();return{x:(e.clientX||e.touches[0].clientX)-r.left,y:(e.clientY||e.touches[0].clientY)-r.top};}'
+    +'ct.strokeStyle='#111';ct.lineWidth=2.5;ct.lineCap='round';ct.lineJoin='round';'
+    +'cv.addEventListener('pointerdown',function(e){e.preventDefault();drawing=true;ct.beginPath();var p=pos(e);ct.moveTo(p.x*(cv.width/cv.offsetWidth),p.y*(cv.height/cv.offsetHeight));cv.setPointerCapture(e.pointerId);});'
+    +'cv.addEventListener('pointermove',function(e){e.preventDefault();if(!drawing)return;var p=pos(e);ct.lineTo(p.x*(cv.width/cv.offsetWidth),p.y*(cv.height/cv.offsetHeight));ct.stroke();});'
+    +'cv.addEventListener('pointerup',function(){drawing=false;});'
+    +'document.getElementById('csm').style.display='flex';'
+    +'})()</script>';
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(cname?cname+' - ':'')+'ZeroScape Site Plan</title>'
   +'<style>'+css+'@media print{body{padding-top:0!important}}</style>'
-  +'</head><body>'+coverHtml+drawHtml+contractHtml+sigHtml+'</body></html>';
+  +'</head><body>'+coverHtml+drawHtml+contractHtml+sigHtml+clientSignModal+'</body></html>';
   // Store for sharing, then show in-app iframe
   window._lastExportHtml=html;
   window._lastExportName=(cname||'Proposal').replace(/[^a-z0-9]/gi,'_');
