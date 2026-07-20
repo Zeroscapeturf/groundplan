@@ -392,6 +392,18 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
 </div>
 <script>
 // ── Data ──────────────────────────────────────────────────────────────────────
+function matSvg(id){
+  var s={
+    'zeroblade':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#14532d"/><path d="M0 7 Q9 2 18 7 Q27 12 36 7" fill="none" stroke="#4ade80" stroke-width="1.8"/><path d="M0 14 Q9 9 18 14 Q27 19 36 14" fill="none" stroke="#22c55e" stroke-width="1.8"/><path d="M0 21 Q9 16 18 21 Q27 26 36 21" fill="none" stroke="#4ade80" stroke-width="1.8"/><path d="M0 28 Q9 23 18 28 Q27 33 36 28" fill="none" stroke="#22c55e" stroke-width="1.8"/></svg>',
+    'zeroblade+':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#052e16"/><path d="M0 5 Q9 2 18 5 Q27 8 36 5" fill="none" stroke="#86efac" stroke-width="1.2"/><path d="M0 10 Q9 7 18 10 Q27 13 36 10" fill="none" stroke="#4ade80" stroke-width="1.2"/><path d="M0 15 Q9 12 18 15 Q27 18 36 15" fill="none" stroke="#86efac" stroke-width="1.2"/><path d="M0 20 Q9 17 18 20 Q27 23 36 20" fill="none" stroke="#4ade80" stroke-width="1.2"/><path d="M0 25 Q9 22 18 25 Q27 28 36 25" fill="none" stroke="#86efac" stroke-width="1.2"/><path d="M0 30 Q9 27 18 30 Q27 33 36 30" fill="none" stroke="#4ade80" stroke-width="1.2"/></svg>',
+    'zeroputt':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#052e16"/><circle cx="5" cy="5" r="2.2" fill="#166534"/><circle cx="13" cy="5" r="2.2" fill="#15803d"/><circle cx="21" cy="5" r="2.2" fill="#166534"/><circle cx="29" cy="5" r="2.2" fill="#15803d"/><circle cx="9" cy="12" r="2.2" fill="#15803d"/><circle cx="17" cy="12" r="2.2" fill="#166534"/><circle cx="25" cy="12" r="2.2" fill="#15803d"/><circle cx="33" cy="12" r="2.2" fill="#166534"/><circle cx="5" cy="19" r="2.2" fill="#166534"/><circle cx="13" cy="19" r="2.2" fill="#15803d"/><circle cx="21" cy="19" r="2.2" fill="#166534"/><circle cx="29" cy="19" r="2.2" fill="#15803d"/><circle cx="9" cy="26" r="2.2" fill="#15803d"/><circle cx="17" cy="26" r="2.2" fill="#166534"/><circle cx="25" cy="26" r="2.2" fill="#15803d"/><circle cx="33" cy="26" r="2.2" fill="#166534"/></svg>',
+    'brownrock':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#92400e"/><ellipse cx="5" cy="7" rx="4" ry="2.5" fill="#b45309" opacity="0.8"/><ellipse cx="16" cy="5" rx="5" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="28" cy="8" rx="4" ry="2.5" fill="#d97706" opacity="0.7"/><ellipse cx="10" cy="15" rx="4" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="22" cy="14" rx="5" ry="2.5" fill="#b45309" opacity="0.8"/><ellipse cx="33" cy="16" rx="3" ry="2" fill="#d97706" opacity="0.7"/><ellipse cx="4" cy="23" rx="3.5" ry="2" fill="#b45309" opacity="0.8"/><ellipse cx="15" cy="22" rx="5" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="27" cy="24" rx="4" ry="2.5" fill="#d97706" opacity="0.7"/><ellipse cx="8" cy="31" rx="4" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="21" cy="30" rx="5" ry="2" fill="#b45309" opacity="0.8"/><ellipse cx="32" cy="29" rx="4" ry="2.5" fill="#d97706" opacity="0.7"/></svg>',
+    'blackrock':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#0c0a09"/><ellipse cx="5" cy="7" rx="4" ry="2.5" fill="#292524" opacity="0.9"/><ellipse cx="16" cy="5" rx="5" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="28" cy="8" rx="4" ry="2.5" fill="#44403c" opacity="0.8"/><ellipse cx="10" cy="15" rx="4" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="22" cy="14" rx="5" ry="2.5" fill="#292524" opacity="0.9"/><ellipse cx="33" cy="16" rx="3" ry="2" fill="#44403c" opacity="0.8"/><ellipse cx="4" cy="23" rx="3.5" ry="2" fill="#292524" opacity="0.9"/><ellipse cx="15" cy="22" rx="5" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="27" cy="24" rx="4" ry="2.5" fill="#44403c" opacity="0.8"/><ellipse cx="8" cy="31" rx="4" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="21" cy="30" rx="5" ry="2" fill="#292524" opacity="0.9"/><ellipse cx="32" cy="29" rx="4" ry="2.5" fill="#44403c" opacity="0.8"/></svg>',
+    'pavers':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#94a3b8"/><rect x="1" y="1" width="16" height="10" rx="1" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/><rect x="19" y="1" width="16" height="10" rx="1" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/><rect x="1" y="13" width="16" height="10" rx="1" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/><rect x="19" y="13" width="16" height="10" rx="1" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/><rect x="1" y="25" width="16" height="10" rx="1" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/><rect x="19" y="25" width="16" height="10" rx="1" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/></svg>',
+    'concrete':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#e2e8f0"/><line x1="18" y1="0" x2="18" y2="36" stroke="#94a3b8" stroke-width="1"/><line x1="0" y1="18" x2="36" y2="18" stroke="#94a3b8" stroke-width="1"/><line x1="0" y1="0" x2="36" y2="36" stroke="#94a3b8" stroke-width="0.5" opacity="0.5"/><line x1="36" y1="0" x2="0" y2="36" stroke="#94a3b8" stroke-width="0.5" opacity="0.5"/></svg>'
+  };
+  return s[id]||('<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#6366f1" rx="2"/></svg>');
+}
 var MATS=[
   {id:'zeroblade', name:'ZeroBlade',  sub:'SYNTHETIC TURF',   sw:'#4ade80',fg:'rgba(0,55,10,0.9)'},
   {id:'zeroblade+',name:'ZeroBlade+', sub:'PREMIUM TURF',     sw:'#16a34a',fg:'rgba(255,255,255,0.9)'},
@@ -809,15 +821,119 @@ function tracePath(ctx,o){
 // ── Fill renderers ────────────────────────────────────────────────────────────
 function renderFill(ctx,o){
   var b=bbox(o),w=b.x1-b.x0,h=b.y1-b.y0,cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2,r=Math.max(w,h)/2;
+  if(w<1||h<1)return;
   ctx.save();ctx.beginPath();tracePath(ctx,o);ctx.clip();
   switch(o.fill){
-    case'zeroblade':{var g=ctx.createLinearGradient(b.x0,b.y0,b.x1,b.y1);g.addColorStop(0,'#bbf7d0');g.addColorStop(0.4,'#4ade80');g.addColorStop(1,'#16a34a');ctx.fillStyle=g;ctx.fillRect(b.x0,b.y0,w,h);var sw=Math.max(5,w/16);for(var x=b.x0;x<b.x1;x+=sw*2){ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(x,b.y0,sw,h);}break;}
-    case'zeroblade+':{var g2=ctx.createLinearGradient(b.x0,b.y0,b.x1,b.y1);g2.addColorStop(0,'#86efac');g2.addColorStop(0.4,'#22c55e');g2.addColorStop(1,'#15803d');ctx.fillStyle=g2;ctx.fillRect(b.x0,b.y0,w,h);var sw2=Math.max(4,w/20);for(var x2=b.x0;x2<b.x1;x2+=sw2*2){ctx.fillStyle='rgba(0,0,0,0.07)';ctx.fillRect(x2,b.y0,sw2,h);}break;}
-    case'zeroputt':{var g3=ctx.createRadialGradient(cx-r*.2,cy-r*.2,0,cx,cy,r*1.1);g3.addColorStop(0,'#4ade80');g3.addColorStop(0.5,'#16a34a');g3.addColorStop(1,'#14532d');ctx.fillStyle=g3;ctx.fillRect(b.x0,b.y0,w,h);var sw3=Math.max(4,w/18);for(var x3=b.x0;x3<b.x1;x3+=sw3*2){ctx.fillStyle='rgba(0,0,0,0.06)';ctx.fillRect(x3,b.y0,sw3,h);}break;}
-    case'brownrock':{var g4=ctx.createRadialGradient(cx-r*.3,cy-r*.3,0,cx,cy,r*1.3);g4.addColorStop(0,'#d97706');g4.addColorStop(0.5,'#92400e');g4.addColorStop(1,'#78350f');ctx.fillStyle=g4;ctx.fillRect(b.x0,b.y0,w,h);for(var ri=0;ri<w*h/90;ri++){var px=b.x0+((ri*173+7)%w),py=b.y0+((ri*271+13)%h),pr=1+((ri*31)%3);ctx.beginPath();ctx.ellipse(px,py,pr*1.4,pr,ri*0.6,0,Math.PI*2);ctx.fillStyle='rgba('+(120+((ri*53)%60))+','+((ri*37)%40)+','+((ri*23)%20)+',0.4)';ctx.fill();}break;}
-    case'blackrock':{var g5=ctx.createRadialGradient(cx-r*.25,cy-r*.25,0,cx,cy,r*1.2);g5.addColorStop(0,'#374151');g5.addColorStop(0.6,'#1f2937');g5.addColorStop(1,'#111827');ctx.fillStyle=g5;ctx.fillRect(b.x0,b.y0,w,h);for(var ri2=0;ri2<w*h/80;ri2++){var px2=b.x0+((ri2*137+5)%w),py2=b.y0+((ri2*211+11)%h),pr2=0.8+((ri2*19)%3);ctx.beginPath();ctx.ellipse(px2,py2,pr2*1.3,pr2,ri2*0.8,0,Math.PI*2);ctx.fillStyle='rgba('+((ri2*41)%40)+','+((ri2*53)%40)+','+((ri2*29)%40)+',0.5)';ctx.fill();}break;}
-    case'pavers':{ctx.fillStyle='#d6d3d1';ctx.fillRect(b.x0,b.y0,w,h);var gp=Math.max(14,Math.min(28,w/6));ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.lineWidth=1.5;for(var xp=b.x0;xp<=b.x1;xp+=gp){ctx.beginPath();ctx.moveTo(xp,b.y0);ctx.lineTo(xp,b.y1);ctx.stroke();}for(var yp=b.y0;yp<=b.y1;yp+=gp*0.6){ctx.beginPath();ctx.moveTo(b.x0,yp);ctx.lineTo(b.x1,yp);ctx.stroke();}break;}
-    case'concrete':{ctx.fillStyle='#cbd5e1';ctx.fillRect(b.x0,b.y0,w,h);var gc=Math.max(18,Math.min(36,w/5));ctx.strokeStyle='rgba(0,0,0,0.09)';ctx.lineWidth=0.6;for(var xc=b.x0;xc<=b.x1;xc+=gc){ctx.beginPath();ctx.moveTo(xc,b.y0);ctx.lineTo(xc,b.y1);ctx.stroke();}for(var yc=b.y0;yc<=b.y1;yc+=gc){ctx.beginPath();ctx.moveTo(b.x0,yc);ctx.lineTo(b.x1,yc);ctx.stroke();}break;}
+    case'zeroblade':{
+      // Synthetic turf: green base + wavy horizontal lines representing grass blades
+      ctx.fillStyle='#14532d';ctx.fillRect(b.x0,b.y0,w,h);
+      var sp=Math.max(6,Math.min(18,h/8));
+      ctx.strokeStyle='#4ade80';ctx.lineWidth=Math.max(0.8,sp*0.18);ctx.lineCap='round';
+      for(var wy=b.y0+sp*.5;wy<b.y1;wy+=sp){
+        ctx.beginPath();var amp=sp*0.4;
+        ctx.moveTo(b.x0,wy);
+        for(var wx=b.x0;wx<b.x1;wx+=sp*1.5){ctx.quadraticCurveTo(wx+sp*.75,wy-amp,wx+sp*1.5,wy);}
+        ctx.stroke();
+      }
+      ctx.strokeStyle='rgba(34,197,94,0.35)';ctx.lineWidth=Math.max(0.5,sp*0.1);
+      for(var wy2=b.y0+sp;wy2<b.y1;wy2+=sp){
+        ctx.beginPath();ctx.moveTo(b.x0,wy2);
+        for(var wx2=b.x0;wx2<b.x1;wx2+=sp*1.5){ctx.quadraticCurveTo(wx2+sp*.75,wy2+sp*.3,wx2+sp*1.5,wy2);}
+        ctx.stroke();
+      }
+      break;}
+    case'zeroblade+':{
+      // Premium turf: denser tighter grass pattern
+      ctx.fillStyle='#052e16';ctx.fillRect(b.x0,b.y0,w,h);
+      var sp2=Math.max(5,Math.min(12,h/10));
+      ctx.strokeStyle='#86efac';ctx.lineWidth=Math.max(0.6,sp2*0.15);ctx.lineCap='round';
+      for(var wy3=b.y0+sp2*.5;wy3<b.y1;wy3+=sp2){
+        ctx.beginPath();ctx.moveTo(b.x0,wy3);
+        for(var wx3=b.x0;wx3<b.x1;wx3+=sp2){ctx.quadraticCurveTo(wx3+sp2*.5,wy3-sp2*.35,wx3+sp2,wy3);}
+        ctx.stroke();
+      }
+      ctx.strokeStyle='rgba(74,222,128,0.4)';ctx.lineWidth=Math.max(0.5,sp2*0.1);
+      for(var wy4=b.y0+sp2*1.5;wy4<b.y1;wy4+=sp2){
+        ctx.beginPath();ctx.moveTo(b.x0,wy4);
+        for(var wx4=b.x0;wx4<b.x1;wx4+=sp2){ctx.quadraticCurveTo(wx4+sp2*.5,wy4+sp2*.25,wx4+sp2,wy4);}
+        ctx.stroke();
+      }
+      break;}
+    case'zeroputt':{
+      // Putting green: dark with uniform dot stipple pattern
+      ctx.fillStyle='#052e16';ctx.fillRect(b.x0,b.y0,w,h);
+      var dotSp=Math.max(8,Math.min(20,w/12));var dotR=dotSp*0.18;
+      for(var dy=b.y0+dotSp*.5;dy<b.y1;dy+=dotSp){
+        var rowOff=(Math.round((dy-b.y0)/dotSp)%2)*dotSp*.5;
+        for(var dx=b.x0+rowOff;dx<b.x1;dx+=dotSp){
+          ctx.beginPath();ctx.arc(dx,dy,dotR,0,Math.PI*2);
+          ctx.fillStyle=((Math.round(dx+dy))%2===0)?'#166534':'#15803d';ctx.fill();
+        }
+      }
+      break;}
+    case'brownrock':{
+      // Decomposed granite: tan base + scattered irregular pebble shapes
+      ctx.fillStyle='#92400e';ctx.fillRect(b.x0,b.y0,w,h);
+      var rSize=Math.max(4,Math.min(10,w/20));
+      var rCount=Math.floor(w*h/(rSize*rSize*6));
+      for(var ri=0;ri<rCount;ri++){
+        var rpx=b.x0+((ri*173+7)%Math.max(1,w-rSize*2))+rSize;
+        var rpy=b.y0+((ri*271+13)%Math.max(1,h-rSize*2))+rSize;
+        var rrx=rSize*(.6+((ri*37)%5)*.1),rry=rSize*(.3+((ri*53)%4)*.08);
+        var rang=ri*0.7;
+        var rcols=['#b45309','#78350f','#d97706','#a16207'];
+        ctx.beginPath();ctx.ellipse(rpx,rpy,rrx,rry,rang,0,Math.PI*2);
+        ctx.fillStyle=rcols[ri%4];ctx.globalAlpha=0.75;ctx.fill();ctx.globalAlpha=1;
+        ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.5;ctx.stroke();
+      }
+      break;}
+    case'blackrock':{
+      // Black granite: dark base + scattered dark pebble shapes
+      ctx.fillStyle='#0c0a09';ctx.fillRect(b.x0,b.y0,w,h);
+      var rSize2=Math.max(4,Math.min(10,w/20));
+      var rCount2=Math.floor(w*h/(rSize2*rSize2*6));
+      for(var ri2=0;ri2<rCount2;ri2++){
+        var rpx2=b.x0+((ri2*137+5)%Math.max(1,w-rSize2*2))+rSize2;
+        var rpy2=b.y0+((ri2*211+11)%Math.max(1,h-rSize2*2))+rSize2;
+        var rrx2=rSize2*(.6+((ri2*31)%5)*.1),rry2=rSize2*(.3+((ri2*43)%4)*.08);
+        var rang2=ri2*0.9;
+        var rcols2=['#292524','#1c1917','#44403c','#374151'];
+        ctx.beginPath();ctx.ellipse(rpx2,rpy2,rrx2,rry2,rang2,0,Math.PI*2);
+        ctx.fillStyle=rcols2[ri2%4];ctx.globalAlpha=0.85;ctx.fill();ctx.globalAlpha=1;
+        ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;ctx.stroke();
+      }
+      break;}
+    case'pavers':{
+      // Paver stone: clean grid of rectangles with grout lines
+      ctx.fillStyle='#94a3b8';ctx.fillRect(b.x0,b.y0,w,h);
+      var pw=Math.max(16,Math.min(40,w/6)),ph=Math.max(10,Math.min(26,h/5));
+      var grout=Math.max(1.5,pw*.05);
+      ctx.strokeStyle='#64748b';ctx.lineWidth=grout;
+      for(var row=0,gy=b.y0;gy<b.y1;gy+=ph+grout,row++){
+        var xOff=row%2?(pw+grout)*.5:0;
+        for(var gx=b.x0-xOff;gx<b.x1;gx+=pw+grout){
+          var px2=Math.max(b.x0,gx),py2=gy,pw2=Math.min(gx+pw,b.x1)-px2,ph3=Math.min(gy+ph,b.y1)-py2;
+          if(pw2>0&&ph3>0){
+            var pg=ctx.createLinearGradient(px2,py2,px2+pw2,py2+ph3);
+            pg.addColorStop(0,'#e2e8f0');pg.addColorStop(1,'#cbd5e1');
+            ctx.fillStyle=pg;ctx.fillRect(px2+grout*.5,py2+grout*.5,pw2-grout,ph3-grout);
+          }
+        }
+      }
+      break;}
+    case'concrete':{
+      // Concrete: light gray with construction joint grid
+      ctx.fillStyle='#e2e8f0';ctx.fillRect(b.x0,b.y0,w,h);
+      // Subtle texture
+      ctx.fillStyle='rgba(148,163,184,0.12)';
+      for(var cxi=0;cxi<w;cxi+=3){for(var cyi=0;cyi<h;cyi+=3){if((cxi+cyi)%6<3)ctx.fillRect(b.x0+cxi,b.y0+cyi,3,3);}}
+      // Control joints
+      var jSp=Math.max(40,Math.min(80,Math.min(w,h)/3));
+      ctx.strokeStyle='#94a3b8';ctx.lineWidth=1.2;ctx.setLineDash([4,0]);
+      for(var xj=b.x0+jSp;xj<b.x1;xj+=jSp){ctx.beginPath();ctx.moveTo(xj,b.y0);ctx.lineTo(xj,b.y1);ctx.stroke();}
+      for(var yj=b.y0+jSp;yj<b.y1;yj+=jSp){ctx.beginPath();ctx.moveTo(b.x0,yj);ctx.lineTo(b.x1,yj);ctx.stroke();}
+      ctx.setLineDash([]);
+      break;}
     case'custom':{ctx.fillStyle=o.customColor||'#6366f1';ctx.fillRect(b.x0,b.y0,w,h);break;}
     default:ctx.fillStyle='rgba(200,200,200,0.4)';ctx.fillRect(b.x0,b.y0,w,h);
   }
@@ -1059,10 +1175,13 @@ function drawObject(ctx,o,sel){
     shapeLabel(ctx,o);
   } else if(o.type==='polygon'){
     var pp=o.pts||[];if(pp.length<2){ctx.restore();return;}
-    ctx.beginPath();ctx.moveTo(pp[0].x,pp[0].y);for(var pi=1;pi<pp.length;pi++)ctx.lineTo(pp[pi].x,pp[pi].y);
-    if(o.closed)ctx.closePath();ctx.stroke();
-    for(var pi2=0;pi2<pp.length-1;pi2++){var pm=mid(pp[pi2],pp[pi2+1]);pill(ctx,fmtFt(pxFt(d2(pp[pi2],pp[pi2+1]))),pm.x,pm.y-5,'#f9fafb','rgba(15,20,30,0.8)');}
-    pp.forEach(function(p,i){ctx.beginPath();ctx.arc(p.x,p.y,i===0?5:3.5,0,Math.PI*2);ctx.fillStyle=i===0&&!o.closed?'#22c55e':sc;ctx.fill();});
+    var isRegionFill=o.fill&&(!o.lineWidth||o.lineWidth<=0);
+    if(!isRegionFill){
+      ctx.beginPath();ctx.moveTo(pp[0].x,pp[0].y);for(var pi=1;pi<pp.length;pi++)ctx.lineTo(pp[pi].x,pp[pi].y);
+      if(o.closed)ctx.closePath();ctx.stroke();
+      for(var pi2=0;pi2<pp.length-1;pi2++){var pm=mid(pp[pi2],pp[pi2+1]);pill(ctx,fmtFt(pxFt(d2(pp[pi2],pp[pi2+1]))),pm.x,pm.y-5,'#f9fafb','rgba(15,20,30,0.8)');}
+      pp.forEach(function(p,i){ctx.beginPath();ctx.arc(p.x,p.y,i===0?5:3.5,0,Math.PI*2);ctx.fillStyle=i===0&&!o.closed?'#22c55e':sc;ctx.fill();});
+    }
     if(o.closed)shapeLabel(ctx,o);
   } else if(o.type==='pencil'){
     ctx.beginPath();catmull(o.pts||[],ctx);if(o.closed)ctx.closePath();ctx.stroke();
@@ -2814,7 +2933,7 @@ async function sharePDF(){
     var m=MATS[i];
     var b=document.createElement('button');b.className='mb'+(m.id===S.mat?' on':'');b.dataset.mat=m.id;
     if(m.custom){
-      b.innerHTML='<div class="msw" id="custom-swatch" style="background:'+S.customFillColor+'"></div><div><div class="mn">'+m.name+'</div><div class="ms">Pick color in Colors panel</div></div>';
+      b.innerHTML='<div id="custom-swatch" style="width:36px;height:36px;border-radius:5px;overflow:hidden;flex-shrink:0;border:1px solid rgba(0,0,0,0.3);background:'+S.customFillColor+'"></div><div><div class="mn">'+m.name+'</div><div class="ms">Pick color in Colors panel</div></div>';
       b.onclick=(function(){return function(){
         setMat('custom');
         closeAll();
@@ -2822,7 +2941,7 @@ async function sharePDF(){
         toast('Pick fill color in the Colors panel');
       };})();
     } else {
-      b.innerHTML='<div class="msw" style="background:'+m.sw+'"></div><div><div class="mn">'+m.name+'</div><div class="ms">'+m.sub+'</div></div>';
+      b.innerHTML='<div style="width:36px;height:36px;border-radius:5px;overflow:hidden;flex-shrink:0;border:1px solid rgba(0,0,0,0.3)">'+matSvg(m.id)+'</div><div><div class="mn">'+m.name+'</div><div class="ms">'+m.sub+'</div></div>';
       b.onclick=(function(mid){return function(){setMat(mid);closeAll();toast((function(){for(var mi=0;mi<MATS.length;mi++){if(MATS[mi].id===mid)return MATS[mi].name;}return mid;}())+' selected — use Fill tool to paint shapes');};})(m.id);
     }
     mg.appendChild(b);
