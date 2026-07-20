@@ -394,7 +394,7 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
 // ── Data ──────────────────────────────────────────────────────────────────────
 function matSvg(id){
   var s={
-    'turf':    '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#16a34a"/></svg>',
+    'turf':    '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#14532d"/><line x1="0" y1="9" x2="36" y2="9" stroke="rgba(0,0,0,0.25)" stroke-width="4"/><line x1="0" y1="18" x2="36" y2="18" stroke="rgba(0,0,0,0.25)" stroke-width="4"/><line x1="0" y1="27" x2="36" y2="27" stroke="rgba(0,0,0,0.25)" stroke-width="4"/></svg>',
     'fringe':  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#15803d"/></svg>',
     'putting': '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#4ade80"/></svg>',
     'concrete':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#d1d5db"/></svg>',
@@ -403,7 +403,7 @@ function matSvg(id){
   return s[id]||('<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#6366f1" rx="2"/></svg>');
 }
 var MATS=[
-  {id:'turf',    name:'Synthetic Turf', sub:'SYNTHETIC GRASS',    sw:'#16a34a',fg:'#0f172a'},
+  {id:'turf',    name:'Synthetic Turf', sub:'SYNTHETIC GRASS',    sw:'#14532d',fg:'#0f172a'},
   {id:'fringe',  name:'Fringe',         sub:'FRINGE TURF',        sw:'#15803d',fg:'#f9fafb'},
   {id:'putting', name:'Putting Green',  sub:'PUTTING GREEN',      sw:'#4ade80',fg:'#0f172a'},
   {id:'concrete',name:'Concrete',       sub:'CONCRETE SURFACE',   sw:'#d1d5db',fg:'#0f172a'},
@@ -813,9 +813,11 @@ function renderFill(ctx,o){
   var b=bbox(o),w=b.x1-b.x0,h=b.y1-b.y0;
   if(w<1||h<1)return;
   ctx.save();ctx.beginPath();tracePath(ctx,o);ctx.clip();
-  var col={'turf':'#22c55e','fringe':'#16a34a','putting':'#4ade80','concrete':'#d1d5db','rockarea':'#92400e','custom':o.customColor||'#6366f1'}[o.fill]||'rgba(180,180,180,0.35)';
+  var col={'turf':'#14532d','fringe':'#15803d','putting':'#4ade80','concrete':'#d1d5db','rockarea':'#92400e','custom':o.customColor||'#6366f1'}[o.fill]||'rgba(180,180,180,0.35)';
   ctx.fillStyle=col;ctx.fillRect(b.x0,b.y0,w,h);
   // subtle diagonal hatch overlay to distinguish fills when placed side by side
+  // turf: darkest green + subtle horizontal stripe to distinguish from fringe
+  if(o.fill==='turf'){var _ts=Math.max(10,Math.min(20,h/8));ctx.fillStyle='rgba(0,0,0,0.18)';for(var _ty=b.y0;_ty<b.y1;_ty+=_ts*2){ctx.fillRect(b.x0,_ty,w,_ts*.45);}}
   if(o.fill==='concrete'){ctx.strokeStyle='rgba(0,0,0,0.07)';ctx.lineWidth=1;var gs=Math.max(20,Math.min(40,w/6));ctx.setLineDash([]);for(var xg=b.x0;xg<b.x1+h;xg+=gs){ctx.beginPath();ctx.moveTo(xg,b.y0);ctx.lineTo(xg-h,b.y1);ctx.stroke();}}
   if(o.fill==='rockarea'){ctx.fillStyle='rgba(0,0,0,0.12)';for(var ri=0,rn=Math.floor(w*h/280);ri<rn;ri++){var rp={x:b.x0+((ri*173+7)%Math.max(1,w)),y:b.y0+((ri*271+13)%Math.max(1,h))},rr=2+((ri*37)%4);ctx.beginPath();ctx.ellipse(rp.x,rp.y,rr*1.4,rr*0.7,ri*0.6,0,Math.PI*2);ctx.fill();}}
   ctx.restore();
@@ -1508,8 +1510,14 @@ function onPD(e){
   // Curbing — freehand drag
   if(S.tool==='curbing'){
     var sn=snapPt(wp);
-    S.chain=[sn];S.chainType='curbing';S.drawing=true;S.phase='drawing';
-    updChain();return;
+    if(S.chain.length===0){
+      S.chain=[sn];S.chainType='curbing';S.phase='drawing';S.drawing=true;updChain();
+    }else if(S.chain.length>2&&d2(sn,S.chain[0])<30/S.scale){
+      commitChain(true);updChain();
+    }else{
+      S.chain.push(sn);updChain();
+    }
+    return;
   }
 
   if(S.tool==='polygon'){
@@ -1600,8 +1608,8 @@ function _onPM(e){
     return;
   }
   if(S.tool==='curbing'&&S.phase==='drawing'&&S.chain.length>0){
-    var ll=S.chain[S.chain.length-1];
-    if(d2(ll,wp)>4/S.scale){S.chain.push(wp);}
+    var _csn=snapPt(wp);
+    S.preview={type:'lineshape',pts:[S.chain[S.chain.length-1],_csn],closed:false,color:S.col,lineWidth:S.strokeWidth||4,lineStyle:S.lineStyle||'solid'};
     S.snapPt=wp;updChain();return;
   }
   if(S.tool==='line'&&S.phase==='drawing'&&S.startPt){
@@ -1688,16 +1696,7 @@ function onPU(e){
     S.startPt=null;S.preview=null;S.drawing=false;S.phase='idle';return;
   }
   // Curbing: freehand commit
-  if(S.tool==='curbing'&&S.chain.length>=2){
-    var curbId=nid();
-    S.chain.push(snapPt(wp));
-    pushUndo();
-    S.objs.push({id:curbId,type:'curbchain',pts:S.chain.slice(),closed:false,curved:true,controls:new Array(S.chain.length-1).fill(null),color:S.col,lineWidth:S.strokeWidth||4,lineStyle:S.lineStyle||'solid'});
-    S.chain=[];S.preview=null;S.drawing=false;S.phase='idle';
-    S.lastDrawTool='curbing';setSel(curbId);setTool('select');
-    toast('Curbing drawn — drag handles to shape it');updChain();return;
-  }
-  if(S.tool==='curbing'){S.chain=[];S.drawing=false;S.phase='idle';updChain();return;}
+  if(S.tool==='curbing'){S.preview=null;updChain();return;}
   // Arc/Circle: drag-to-draw commit
   if(S.tool==='arc'&&S.arcPhase===1&&S.arcCenter){
     var rx2=Math.abs(wp.x-S.arcCenter.x),ry2=Math.abs(wp.y-S.arcCenter.y);
@@ -1841,6 +1840,9 @@ function commitChain(closed){
     else if(!closed&&S.chainType==='tap')toast('Shape open \u2713 \u2014 drag orange handles to curve segments');
     else toast('Line drawn \u2713 \u2014 drag orange handles to curve segments');
     setSel(newId);
+    var _ct=S.chainType;
+    S.chain=[];S.preview=null;S.phase='idle';S.drawing=false;
+    if(_ct==='tap'||_ct==='curbing'){setTool('select');return;}
   }
   S.chain=[];S.preview=null;S.phase='idle';
 }
