@@ -421,6 +421,7 @@ var TOOLS=[
   {id:'select',  icon:'&#8598;',  lbl:'Select'},
   {id:'pan',     icon:'&#9995;',  lbl:'Pan'},
   {id:'line',    icon:'&#9585;',  lbl:'Line'},
+  {id:'tap',     icon:'&#9210;',  lbl:'Tap'},
   {id:'curbing', icon:'&#9135;',  lbl:'Curbing'},
   {id:'arc',     icon:'&#11181;', lbl:'Oval'},
   {id:'rect',    icon:'&#9645;',  lbl:'Rect'},
@@ -1087,7 +1088,7 @@ function render(){
   }
   if(S.preview){ctx.globalAlpha=0.48;drawObject(ctx,S.preview,false);ctx.globalAlpha=1;}
   var ch=S.chain;
-  if(ch.length>0&&(S.tool==='line'||S.tool==='curbing')){
+  if(ch.length>0&&(S.tool==='line'||S.tool==='curbing'||S.tool==='tap')){
     var isCurb=S.chainType==='curbing';
     ctx.strokeStyle=isCurb?'#111827':'#374151';ctx.lineWidth=isCurb?6:1.8;ctx.lineCap='round';ctx.lineJoin='round';
     ctx.beginPath();
@@ -1322,6 +1323,7 @@ function onPD(e){
       if(ldt==='line'){S.startPt=wp;S.drawing=true;S.phase='drawing';}
       else if(ldt==='curbing'){S.chain=[wp];S.chainType='curbing';S.drawing=true;S.phase='drawing';updChain();}
       else if(ldt==='arc'){S.arcCenter=wp;S.arcPhase=1;S.drawing=true;S.phase='drawing';}
+      else if(ldt==='tap'){S.chain=[wp];S.chainType='tap';S.drawing=true;S.phase='drawing';updChain();}
     }else{setSel(null);}
     return;
   }
@@ -1380,6 +1382,20 @@ function onPD(e){
   // Arc
   if(S.tool==='arc'){
     if(S.arcPhase===0){S.arcCenter=wp;S.arcPhase=1;S.drawing=true;S.phase='drawing';}
+    return;
+  }
+
+  // Tap — tap each corner, tap green start dot to close
+  if(S.tool==='tap'){
+    var sn=snapPt(wp);
+    if(S.chain.length===0){
+      S.chain=[sn];S.chainType='tap';S.phase='drawing';S.drawing=true;
+      updChain();
+    }else if(S.chain.length>2&&d2(sn,S.chain[0])<30/S.scale){
+      commitChain(true);updChain();
+    }else{
+      S.chain.push(sn);updChain();
+    }
     return;
   }
 
@@ -1706,6 +1722,7 @@ function commitChain(closed){
     var newId=nid();
     S.objs.push({id:newId,type:t,pts:S.chain.slice(),closed:closed,curved:S.chainType==='curbing',controls:new Array(closed?npts:npts-1).fill(null),color:S.col,lineWidth:S.chainType==='curbing'?(S.strokeWidth||4):(S.strokeWidth||2),lineStyle:S.lineStyle||'solid'});
     if(closed)toast(S.chainType==='curbing'?'Curbing placed \u2713':'Shape closed \u2713 \u2014 drag orange handles to curve segments');
+    else if(!closed&&S.chainType==='tap')toast('Shape open \u2713 \u2014 drag orange handles to curve segments');
     else toast('Line drawn \u2713 \u2014 drag orange handles to curve segments');
     setSel(newId);
   }
@@ -1745,10 +1762,9 @@ function toggleCurve(){
 }
 function updChain(){
   var b=document.getElementById('chain-badge');
-  if((S.tool==='line'||S.tool==='curbing')&&S.chain.length>0){
+  if((S.tool==='line'||S.tool==='curbing'||S.tool==='tap')&&S.chain.length>0){
     b.style.display='flex';
     document.getElementById('chain-pts').textContent=S.chain.length+' pts';
-    // Hide curve toggle for curbing (always curved) and show for line
     var ct=document.getElementById('curve-toggle');
     if(ct)ct.style.display=S.chainType==='curbing'?'none':'inline-block';
   }
@@ -1765,7 +1781,7 @@ function setTool(t){
   var penOpts=document.getElementById('pen-opts');if(penOpts)penOpts.style.display=(t==='pen')?'flex':'none';
   var pclOpts=document.getElementById('pencil-opts');if(pclOpts)pclOpts.style.display=(t==='pencil')?'flex':'none';
   var lsPanel=document.getElementById('line-style-btns');
-  if(lsPanel)lsPanel.style.display=['line','curbing','rect','arc','polygon','dimension'].indexOf(t)>=0?'flex':'none';}
+  if(lsPanel)lsPanel.style.display=['line','tap','curbing','rect','arc','polygon','dimension'].indexOf(t)>=0?'flex':'none';}
 function setMat(id){
   S.mat=id;
   document.querySelectorAll('.mb').forEach(function(b){b.classList.toggle('on',b.dataset.mat===id);});
@@ -1835,8 +1851,9 @@ function updHint(){
   if(S.tool==='arc'&&S.arcPhase===1){h.textContent='Drag to set width';h.style.display='block';}
   else if(S.tool==='arc'&&S.arcPhase===2){h.textContent='Now drag to set height';h.style.display='block';}
   else if(S.calMode){h.textContent='Draw a line over a known real-world distance';h.style.display='block';}
-  else if(S.tool==='curbing'){h.textContent='Tap to trace curbing \u2014 curves automatically';h.style.display='block';}
-  else if(S.tool==='line'){h.textContent='Tap points to draw • tap first dot to close shape';h.style.display='block';}
+  else if(S.tool==='tap'){h.textContent='Tap corners to add points • tap green dot or Close to finish';h.style.display='block';}
+  else if(S.tool==='curbing'){h.textContent='Drag to trace curbing — curves automatically';h.style.display='block';}
+  else if(S.tool==='line'){h.textContent='Drag A→B to draw a line';h.style.display='block';}
   else if(S.tool==='pen'){h.textContent='Drag to draw a smooth shape';h.style.display='block';}
   else h.style.display='none';
 }
@@ -2732,7 +2749,7 @@ async function sharePDF(){
 
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){setSel(null);commitChain(false);S.polyPts=[];S.arcPhase=0;S.arcCenter=null;S.preview=null;S.phase='idle';updChain();updHint();}
-  if(e.key==='Enter'&&(S.tool==='line'||S.tool==='curbing')){if(S.chain.length>2)closeChain();else abandonChain();}
+  if(e.key==='Enter'&&(S.tool==='line'||S.tool==='curbing'||S.tool==='tap')){if(S.chain.length>2)closeChain();else abandonChain();}
   if(e.key==='z'&&(e.metaKey||e.ctrlKey))undo();
   if((e.key==='Delete'||e.key==='Backspace')&&!e.target.matches('input'))deleteSel();
   var ks={v:'select',h:'pan',l:'line',c:'curbing',a:'arc',r:'rect',p:'pencil',f:'fill',s:'stamp',m:'measure'};
