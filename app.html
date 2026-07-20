@@ -513,6 +513,81 @@ function raySegT(ox,oy,dx,dy,ax,ay,bx,by){
   var fx=ox-ax,fy=oy-ay,t=(fx*ey-fy*ex)/den,u=(fx*dy-fy*dx)/den;
   return(t>=0&&u>=0&&u<=1)?t:-1;
 }
+// Order boundary objects into a connected closed path; returns [{obj,reverse}] or null
+function orderBoundaryObjs(objs){
+  if(!objs||objs.length===0)return null;
+  var snapR=30/S.scale;
+  var remaining=objs.slice(),ordered=[];
+  var cur=remaining.shift();
+  if(!cur.pts||cur.pts.length<2)return null;
+  ordered.push({obj:cur,reverse:false});
+  var curEnd=cur.pts[cur.pts.length-1];
+  for(var iter=0;iter<=objs.length+1;iter++){
+    if(remaining.length===0)break;
+    var found=false;
+    for(var ri=0;ri<remaining.length;ri++){
+      var cand=remaining[ri];if(!cand.pts||cand.pts.length<2)continue;
+      var s=cand.pts[0],e=cand.pts[cand.pts.length-1];
+      if(d2(curEnd,s)<snapR){ordered.push({obj:cand,reverse:false});curEnd=e;remaining.splice(ri,1);found=true;break;}
+      else if(d2(curEnd,e)<snapR){ordered.push({obj:cand,reverse:true});curEnd=s;remaining.splice(ri,1);found=true;break;}
+    }
+    if(!found)return null;
+  }
+  // Verify loop closes back to start
+  var firstPt=ordered[0].reverse?ordered[0].obj.pts[ordered[0].obj.pts.length-1]:ordered[0].obj.pts[0];
+  if(d2(curEnd,firstPt)>snapR)return null;
+  return ordered;
+}
+// Build a dense polygon from ordered boundary objects using actual curve geometry
+function buildRegionFillPts(pt){
+  var allSegs=allBoundarySegs(),N=36,maxR=8000,missed=0,hitIdMap={};
+  for(var i=0;i<N;i++){
+    var ang=i/N*Math.PI*2,dx=Math.cos(ang),dy=Math.sin(ang),minT=maxR,hitId=null;
+    // Find which object owns the nearest hit segment
+    for(var oi=0;oi<S.objs.length;oi++){
+      var o=S.objs[oi];
+      var epts=expandPts(o);
+      var numPts=epts.length;
+      if(numPts<2)continue;
+      // Also handle rect/ellipse
+      if(o.type==='rect'){var b2=bbox(o);var rpts=[{x:b2.x0,y:b2.y0},{x:b2.x1,y:b2.y0},{x:b2.x1,y:b2.y1},{x:b2.x0,y:b2.y1}];epts=rpts;numPts=4;}
+      var isClosedO=o.closed||o.type==='rect'||o.type==='ellipse';
+      var numSegs=isClosedO?numPts:numPts-1;
+      for(var si=0;si<numSegs;si++){
+        var a=epts[si],b=epts[(si+1)%numPts];
+        var t=raySegT(pt.x,pt.y,dx,dy,a.x,a.y,b.x,b.y);
+        if(t>0.1&&t<minT){minT=t;hitId=o.id;}
+      }
+    }
+    if(minT>=maxR){missed++;if(missed>5)return null;}
+    else if(hitId)hitIdMap[hitId]=true;
+  }
+  var hitIds=Object.keys(hitIdMap);
+  var boundaryObjs=hitIds.map(function(id){for(var i=0;i<S.objs.length;i++)if(S.objs[i].id===id)return S.objs[i];return null;}).filter(Boolean);
+  if(boundaryObjs.length===0)return null;
+  // Single closed shape — use high-res expansion
+  if(boundaryObjs.length===1&&(boundaryObjs[0].closed||boundaryObjs[0].type==='rect'||boundaryObjs[0].type==='ellipse')){
+    var solo=boundaryObjs[0];
+    if(solo.type==='rect'){var b3=bbox(solo);return[{x:b3.x0,y:b3.y0},{x:b3.x1,y:b3.y0},{x:b3.x1,y:b3.y1},{x:b3.x0,y:b3.y1}];}
+    if(solo.type==='ellipse'){var epoly=[];for(var ei=0;ei<128;ei++){var ea=ei/128*Math.PI*2;epoly.push({x:solo.center.x+solo.rx*Math.cos(ea),y:solo.center.y+solo.ry*Math.sin(ea)});}return epoly;}
+    return expandPts(solo);
+  }
+  // Multiple boundary objects — try to order them into a connected path
+  var ordered=orderBoundaryObjs(boundaryObjs);
+  if(ordered){
+    var poly2=[];
+    for(var bi=0;bi<ordered.length;bi++){
+      var item=ordered[bi];
+      var epts2=expandPts(item.obj);
+      if(item.reverse)epts2=epts2.slice().reverse();
+      // Add all points except last to avoid duplicate at join
+      for(var pi=0;pi<epts2.length-1;pi++)poly2.push(epts2[pi]);
+    }
+    return poly2.length>=3?poly2:null;
+  }
+  // Fallback: classic ray-cast polygon
+  return null;
+}
 // Shoot rays from pt in all directions; returns approx polygon or null if not enclosed
 function enclosedRegionPoly(pt){
   var segs=allBoundarySegs(),N=90,maxR=8000,poly=[],missed=0,maxMiss=8;
@@ -610,19 +685,14 @@ function hitForFill(o,pt){
   var pts=o.pts||[];
   if(pts.length<3||!o.closed)return hitObj(o,pt);
   // For curved shapes (penpath, curbchain, curved lineshape) densely sample the curve
-  var isCurved=o.type==='penpath'||o.type==='curbchain'||(o.type==='lineshape'&&o.curved);
+  var isCurved=o.type==='penpath'||o.type==='curbchain'||(o.type==='lineshape'&&(o.curved||(o.controls&&o.controls.some(function(c){return c!==null;}))));
   if(isCurved){
-    // Sample catmull-rom curve at many points for accurate polygon
-    var dense=[];
-    var steps=Math.max(pts.length*8, 40);
-    for(var si=0;si<steps;si++){
-      var t=si/(steps-1)*(pts.length-1);
-      var idx=Math.floor(t),frac=t-idx;
-      var p0=pts[Math.max(0,idx-1)],p1=pts[idx],p2=pts[Math.min(pts.length-1,idx+1)],p3=pts[Math.min(pts.length-1,idx+2)];
-      var t2=frac*frac,t3=t2*frac;
-      var cx=-.5*p0.x+1.5*p1.x-1.5*p2.x+.5*p3.x,bx=p0.x-2.5*p1.x+2*p2.x-.5*p3.x,ax=-.5*p0.x+.5*p2.x;
-      var cy=-.5*p0.y+1.5*p1.y-1.5*p2.y+.5*p3.y,by=p0.y-2.5*p1.y+2*p2.y-.5*p3.y,ay=-.5*p0.y+.5*p2.y;
-      dense.push({x:cx*t3+bx*t2+ax*frac+p1.x, y:cy*t3+by*t2+ay*frac+p1.y});
+    // Use expandPts which correctly samples quadratic bezier control points
+    var dense=expandPts(o);
+    // For curbchain/penpath use catmull-rom sampling
+    if(o.type==='curbchain'||o.type==='penpath'||o.type==='pencil'){
+      dense=[];var steps2=Math.max(pts.length*8,40);
+      for(var si=0;si<steps2;si++){var t=si/(steps2-1)*(pts.length-1);var idx=Math.floor(t),frac=t-idx;var p0=pts[Math.max(0,idx-1)],p1=pts[idx],p2=pts[Math.min(pts.length-1,idx+1)],p3=pts[Math.min(pts.length-1,idx+2)];var t2=frac*frac,t3=t2*frac;var cxx=-.5*p0.x+1.5*p1.x-1.5*p2.x+.5*p3.x,bx=p0.x-2.5*p1.x+2*p2.x-.5*p3.x,ax=-.5*p0.x+.5*p2.x;var cyy=-.5*p0.y+1.5*p1.y-1.5*p2.y+.5*p3.y,by=p0.y-2.5*p1.y+2*p2.y-.5*p3.y,ay=-.5*p0.y+.5*p2.y;dense.push({x:cxx*t3+bx*t2+ax*frac+p1.x,y:cyy*t3+by*t2+ay*frac+p1.y});}
     }
     return ptInPoly(pt,dense);
   }
@@ -731,9 +801,9 @@ function tracePath(ctx,o){
   if(o.type==='pencil'||o.type==='penpath'||o.type==='curbchain'){catmull(pts,ctx);}
   else if((o.type==='lineshape')&&o.controls){
     for(var i=1;i<pts.length;i++){var c=o.controls[i-1];if(c)ctx.quadraticCurveTo(c.cx,c.cy,pts[i].x,pts[i].y);else ctx.lineTo(pts[i].x,pts[i].y);}
-    if(o.closed){var cl=o.controls[pts.length-1];if(cl)ctx.quadraticCurveTo(cl.cx,cl.cy,pts[0].x,pts[0].y);}
+    if(o.closed){var cl=o.controls[pts.length-1];if(cl)ctx.quadraticCurveTo(cl.cx,cl.cy,pts[0].x,pts[0].y);ctx.closePath();}
   }else{for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);}
-  ctx.closePath();
+  if(o.closed)ctx.closePath();
 }
 
 // ── Fill renderers ────────────────────────────────────────────────────────────
@@ -1379,8 +1449,8 @@ function onPD(e){
       }
       toast('Filled \u2713 \u2014 name it in Summary');
     }else{
-      // Try to fill an area enclosed by multiple shapes (lines, rects, curbing, etc.)
-      var regionPoly=enclosedRegionPoly(wp);
+      // Build precise fill path from actual shape geometry (curves follow exactly)
+      var regionPoly=buildRegionFillPts(wp)||enclosedRegionPoly(wp);
       if(regionPoly){
         pushUndo();
         var filledCount2=S.objs.filter(function(o){return o.fill;}).length;
@@ -1388,7 +1458,7 @@ function onPD(e){
         if(S.mat==='custom')regionObj.customColor=S.customFillColor;
         S.objs.push(regionObj);
         toast('Area filled \u2713 \u2014 name it in Summary');
-      }else{toast('Tap inside a closed shape, or draw connected lines that fully enclose an area');}
+      }else{toast('Tap inside a closed shape, or connect lines at their endpoints to enclose an area');}
     }
     return;
   }
