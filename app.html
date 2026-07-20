@@ -394,25 +394,25 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
 // ── Data ──────────────────────────────────────────────────────────────────────
 function matSvg(id){
   var s={
-    'zeroblade':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#14532d"/><path d="M0 7 Q9 2 18 7 Q27 12 36 7" fill="none" stroke="#4ade80" stroke-width="1.8"/><path d="M0 14 Q9 9 18 14 Q27 19 36 14" fill="none" stroke="#22c55e" stroke-width="1.8"/><path d="M0 21 Q9 16 18 21 Q27 26 36 21" fill="none" stroke="#4ade80" stroke-width="1.8"/><path d="M0 28 Q9 23 18 28 Q27 33 36 28" fill="none" stroke="#22c55e" stroke-width="1.8"/></svg>',
-    'zeroblade+':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#052e16"/><path d="M0 5 Q9 2 18 5 Q27 8 36 5" fill="none" stroke="#86efac" stroke-width="1.2"/><path d="M0 10 Q9 7 18 10 Q27 13 36 10" fill="none" stroke="#4ade80" stroke-width="1.2"/><path d="M0 15 Q9 12 18 15 Q27 18 36 15" fill="none" stroke="#86efac" stroke-width="1.2"/><path d="M0 20 Q9 17 18 20 Q27 23 36 20" fill="none" stroke="#4ade80" stroke-width="1.2"/><path d="M0 25 Q9 22 18 25 Q27 28 36 25" fill="none" stroke="#86efac" stroke-width="1.2"/><path d="M0 30 Q9 27 18 30 Q27 33 36 30" fill="none" stroke="#4ade80" stroke-width="1.2"/></svg>',
-    'zeroputt':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#052e16"/><circle cx="5" cy="5" r="2.2" fill="#166534"/><circle cx="13" cy="5" r="2.2" fill="#15803d"/><circle cx="21" cy="5" r="2.2" fill="#166534"/><circle cx="29" cy="5" r="2.2" fill="#15803d"/><circle cx="9" cy="12" r="2.2" fill="#15803d"/><circle cx="17" cy="12" r="2.2" fill="#166534"/><circle cx="25" cy="12" r="2.2" fill="#15803d"/><circle cx="33" cy="12" r="2.2" fill="#166534"/><circle cx="5" cy="19" r="2.2" fill="#166534"/><circle cx="13" cy="19" r="2.2" fill="#15803d"/><circle cx="21" cy="19" r="2.2" fill="#166534"/><circle cx="29" cy="19" r="2.2" fill="#15803d"/><circle cx="9" cy="26" r="2.2" fill="#15803d"/><circle cx="17" cy="26" r="2.2" fill="#166534"/><circle cx="25" cy="26" r="2.2" fill="#15803d"/><circle cx="33" cy="26" r="2.2" fill="#166534"/></svg>',
-    'brownrock':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#92400e"/><ellipse cx="5" cy="7" rx="4" ry="2.5" fill="#b45309" opacity="0.8"/><ellipse cx="16" cy="5" rx="5" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="28" cy="8" rx="4" ry="2.5" fill="#d97706" opacity="0.7"/><ellipse cx="10" cy="15" rx="4" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="22" cy="14" rx="5" ry="2.5" fill="#b45309" opacity="0.8"/><ellipse cx="33" cy="16" rx="3" ry="2" fill="#d97706" opacity="0.7"/><ellipse cx="4" cy="23" rx="3.5" ry="2" fill="#b45309" opacity="0.8"/><ellipse cx="15" cy="22" rx="5" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="27" cy="24" rx="4" ry="2.5" fill="#d97706" opacity="0.7"/><ellipse cx="8" cy="31" rx="4" ry="2.5" fill="#78350f" opacity="0.8"/><ellipse cx="21" cy="30" rx="5" ry="2" fill="#b45309" opacity="0.8"/><ellipse cx="32" cy="29" rx="4" ry="2.5" fill="#d97706" opacity="0.7"/></svg>',
-    'blackrock':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#0c0a09"/><ellipse cx="5" cy="7" rx="4" ry="2.5" fill="#292524" opacity="0.9"/><ellipse cx="16" cy="5" rx="5" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="28" cy="8" rx="4" ry="2.5" fill="#44403c" opacity="0.8"/><ellipse cx="10" cy="15" rx="4" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="22" cy="14" rx="5" ry="2.5" fill="#292524" opacity="0.9"/><ellipse cx="33" cy="16" rx="3" ry="2" fill="#44403c" opacity="0.8"/><ellipse cx="4" cy="23" rx="3.5" ry="2" fill="#292524" opacity="0.9"/><ellipse cx="15" cy="22" rx="5" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="27" cy="24" rx="4" ry="2.5" fill="#44403c" opacity="0.8"/><ellipse cx="8" cy="31" rx="4" ry="2.5" fill="#1c1917" opacity="0.9"/><ellipse cx="21" cy="30" rx="5" ry="2" fill="#292524" opacity="0.9"/><ellipse cx="32" cy="29" rx="4" ry="2.5" fill="#44403c" opacity="0.8"/></svg>',
-    'pavers':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#94a3b8"/><rect x="1" y="1" width="16" height="10" rx="1" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/><rect x="19" y="1" width="16" height="10" rx="1" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/><rect x="1" y="13" width="16" height="10" rx="1" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/><rect x="19" y="13" width="16" height="10" rx="1" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/><rect x="1" y="25" width="16" height="10" rx="1" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/><rect x="19" y="25" width="16" height="10" rx="1" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/></svg>',
-    'concrete':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#e2e8f0"/><line x1="18" y1="0" x2="18" y2="36" stroke="#94a3b8" stroke-width="1"/><line x1="0" y1="18" x2="36" y2="18" stroke="#94a3b8" stroke-width="1"/><line x1="0" y1="0" x2="36" y2="36" stroke="#94a3b8" stroke-width="0.5" opacity="0.5"/><line x1="36" y1="0" x2="0" y2="36" stroke="#94a3b8" stroke-width="0.5" opacity="0.5"/></svg>'
+    'palmtree':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#14532d"/><line x1="0" y1="9" x2="36" y2="9" stroke="#166534" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#15803d" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#166534" stroke-width="4.5"/></svg>',
+    'fruittree':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#1a4731"/><line x1="0" y1="9" x2="36" y2="9" stroke="#22863a" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#2da44e" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#22863a" stroke-width="4.5"/></svg>',
+    'drip':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#0c4a6e"/><line x1="0" y1="9" x2="36" y2="9" stroke="#0ea5e9" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#38bdf8" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#0ea5e9" stroke-width="4.5"/></svg>',
+    'sprinkler':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#164e63"/><line x1="0" y1="9" x2="36" y2="9" stroke="#22d3ee" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#67e8f9" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#22d3ee" stroke-width="4.5"/></svg>',
+    'bush':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#365314"/><line x1="0" y1="9" x2="36" y2="9" stroke="#84cc16" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#a3e635" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#84cc16" stroke-width="4.5"/></svg>',
+    'rock':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#44403c"/><line x1="0" y1="9" x2="36" y2="9" stroke="#78716c" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#a8a29e" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#78716c" stroke-width="4.5"/></svg>',
+    'firepit':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#431407"/><line x1="0" y1="9" x2="36" y2="9" stroke="#f97316" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#fb923c" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#f97316" stroke-width="4.5"/></svg>'
   };
   return s[id]||('<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#6366f1" rx="2"/></svg>');
 }
 var MATS=[
-  {id:'zeroblade', name:'ZeroBlade',  sub:'SYNTHETIC TURF',   sw:'#4ade80',fg:'rgba(0,55,10,0.9)'},
-  {id:'zeroblade+',name:'ZeroBlade+', sub:'PREMIUM TURF',     sw:'#16a34a',fg:'rgba(255,255,255,0.9)'},
-  {id:'zeroputt',  name:'ZeroPutt',   sub:'PUTTING GREEN',    sw:'#14532d',fg:'rgba(255,255,255,0.92)'},
-  {id:'brownrock', name:'Brown Rock', sub:'DECOMP. GRANITE',  sw:'#92400e',fg:'rgba(255,237,213,0.92)'},
-  {id:'blackrock', name:'Black Rock', sub:'BLACK GRANITE',    sw:'#1c1917',fg:'rgba(200,200,200,0.9)'},
-  {id:'pavers',    name:'Pavers',     sub:'PAVER STONE',      sw:'#d6d3d1',fg:'rgba(30,27,24,0.88)'},
-  {id:'concrete',  name:'Concrete',   sub:'CONCRETE',         sw:'#cbd5e1',fg:'rgba(30,41,59,0.88)'},
-  {id:'custom',    name:'Custom Color',sub:'',                  sw:'#6366f1',fg:'rgba(255,255,255,0.95)',custom:true}
+  {id:'palmtree',  name:'Palm Tree',      sub:'PALM PLANTING',      sw:'#14532d',fg:'rgba(255,255,255,0.9)'},
+  {id:'fruittree', name:'Fruit Tree',     sub:'FRUIT TREE ZONE',    sw:'#1a4731',fg:'rgba(255,255,255,0.9)'},
+  {id:'drip',      name:'Drip System',    sub:'DRIP IRRIGATION',    sw:'#0c4a6e',fg:'rgba(255,255,255,0.92)'},
+  {id:'sprinkler', name:'Sprinkler Box',  sub:'SPRINKLER ZONE',     sw:'#164e63',fg:'rgba(255,255,255,0.92)'},
+  {id:'bush',      name:'Bush / Shrubbery',sub:'SHRUB PLANTING',    sw:'#365314',fg:'rgba(255,255,255,0.9)'},
+  {id:'rock',      name:'Rock',           sub:'ROCK / GRAVEL',      sw:'#44403c',fg:'rgba(255,255,255,0.88)'},
+  {id:'firepit',   name:'Fire Pit',       sub:'FIRE FEATURE',       sw:'#431407',fg:'rgba(255,255,255,0.95)'},
+  {id:'custom',    name:'Custom Color',   sub:'',                    sw:'#6366f1',fg:'rgba(255,255,255,0.95)',custom:true}
 ];
 var STAMPS=[
   {id:'palm',     name:'Palm Tree',   icon:'&#127796;',r:28},
@@ -451,7 +451,7 @@ var SCOLS=['#111827','#374151','#6b7280','#ffffff','#22c55e','#3b82f6','#ef4444'
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var S={
-  tool:'pen',mat:'zeroblade',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',
+  tool:'pen',mat:'palmtree',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',
   ppf:40,objs:[],sel:null,hist:[],
   pan:{x:80,y:100},scale:1,vel:{x:0,y:0},rafPan:null,
   drawing:false,penDown:false,pinching:false,touchPtrs:new Map(),lastPos:null,phase:'idle',penSize:6,penSmooth:true,lineStyle:'solid',strokeWidth:2,polyPts2:[],
@@ -820,127 +820,75 @@ function tracePath(ctx,o){
 
 // ── Fill renderers ────────────────────────────────────────────────────────────
 function renderFill(ctx,o){
-  var b=bbox(o),w=b.x1-b.x0,h=b.y1-b.y0,cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2,r=Math.max(w,h)/2;
+  var b=bbox(o),w=b.x1-b.x0,h=b.y1-b.y0;
   if(w<1||h<1)return;
   ctx.save();ctx.beginPath();tracePath(ctx,o);ctx.clip();
+  // Helper: horizontal stripes
+  function stripes(bg,s1,s2,sw){
+    ctx.fillStyle=bg;ctx.fillRect(b.x0,b.y0,w,h);
+    var sp=Math.max(sw,Math.min(sw*2,h/6));
+    for(var y=b.y0;y<b.y1;y+=sp){
+      ctx.fillStyle=(Math.round((y-b.y0)/sp)%2===0)?s1:s2;
+      ctx.fillRect(b.x0,y,w,sp*.55);
+    }
+  }
   switch(o.fill){
-    case'zeroblade':{
-      // Synthetic turf: green base + wavy horizontal lines representing grass blades
-      ctx.fillStyle='#14532d';ctx.fillRect(b.x0,b.y0,w,h);
-      var sp=Math.max(6,Math.min(18,h/8));
-      ctx.strokeStyle='#4ade80';ctx.lineWidth=Math.max(0.8,sp*0.18);ctx.lineCap='round';
-      for(var wy=b.y0+sp*.5;wy<b.y1;wy+=sp){
-        ctx.beginPath();var amp=sp*0.4;
-        ctx.moveTo(b.x0,wy);
-        for(var wx=b.x0;wx<b.x1;wx+=sp*1.5){ctx.quadraticCurveTo(wx+sp*.75,wy-amp,wx+sp*1.5,wy);}
-        ctx.stroke();
+    case'palmtree': stripes('#0d3320','#166534','#14532d',14);break;
+    case'fruittree':stripes('#102b1e','#1a5c2f','#1e7340',14);break;
+    case'bush':     stripes('#1e3a0a','#4a7c10','#5d9e14',14);break;
+    case'drip':
+      ctx.fillStyle='#0a3347';ctx.fillRect(b.x0,b.y0,w,h);
+      var sp2=Math.max(12,Math.min(20,h/5));
+      for(var y2=b.y0+sp2*.4;y2<b.y1;y2+=sp2){
+        ctx.fillStyle='#0284c7';ctx.fillRect(b.x0,y2,w,sp2*.45);
       }
-      ctx.strokeStyle='rgba(34,197,94,0.35)';ctx.lineWidth=Math.max(0.5,sp*0.1);
-      for(var wy2=b.y0+sp;wy2<b.y1;wy2+=sp){
-        ctx.beginPath();ctx.moveTo(b.x0,wy2);
-        for(var wx2=b.x0;wx2<b.x1;wx2+=sp*1.5){ctx.quadraticCurveTo(wx2+sp*.75,wy2+sp*.3,wx2+sp*1.5,wy2);}
-        ctx.stroke();
-      }
-      break;}
-    case'zeroblade+':{
-      // Premium turf: denser tighter grass pattern
-      ctx.fillStyle='#052e16';ctx.fillRect(b.x0,b.y0,w,h);
-      var sp2=Math.max(5,Math.min(12,h/10));
-      ctx.strokeStyle='#86efac';ctx.lineWidth=Math.max(0.6,sp2*0.15);ctx.lineCap='round';
-      for(var wy3=b.y0+sp2*.5;wy3<b.y1;wy3+=sp2){
-        ctx.beginPath();ctx.moveTo(b.x0,wy3);
-        for(var wx3=b.x0;wx3<b.x1;wx3+=sp2){ctx.quadraticCurveTo(wx3+sp2*.5,wy3-sp2*.35,wx3+sp2,wy3);}
-        ctx.stroke();
-      }
-      ctx.strokeStyle='rgba(74,222,128,0.4)';ctx.lineWidth=Math.max(0.5,sp2*0.1);
-      for(var wy4=b.y0+sp2*1.5;wy4<b.y1;wy4+=sp2){
-        ctx.beginPath();ctx.moveTo(b.x0,wy4);
-        for(var wx4=b.x0;wx4<b.x1;wx4+=sp2){ctx.quadraticCurveTo(wx4+sp2*.5,wy4+sp2*.25,wx4+sp2,wy4);}
-        ctx.stroke();
-      }
-      break;}
-    case'zeroputt':{
-      // Putting green: dark with uniform dot stipple pattern
-      ctx.fillStyle='#052e16';ctx.fillRect(b.x0,b.y0,w,h);
-      var dotSp=Math.max(8,Math.min(20,w/12));var dotR=dotSp*0.18;
-      for(var dy=b.y0+dotSp*.5;dy<b.y1;dy+=dotSp){
-        var rowOff=(Math.round((dy-b.y0)/dotSp)%2)*dotSp*.5;
-        for(var dx=b.x0+rowOff;dx<b.x1;dx+=dotSp){
-          ctx.beginPath();ctx.arc(dx,dy,dotR,0,Math.PI*2);
-          ctx.fillStyle=((Math.round(dx+dy))%2===0)?'#166534':'#15803d';ctx.fill();
+      // small circles for drip emitters
+      var er=Math.max(2,sp2*.22);
+      for(var ey=b.y0+sp2*.65;ey<b.y1;ey+=sp2){
+        for(var ex=b.x0+sp2*.5;ex<b.x1;ex+=sp2*1.8){
+          ctx.beginPath();ctx.arc(ex,ey,er,0,Math.PI*2);ctx.fillStyle='#38bdf8';ctx.fill();
         }
       }
-      break;}
-    case'brownrock':{
-      // Decomposed granite: tan base + scattered irregular pebble shapes
-      ctx.fillStyle='#92400e';ctx.fillRect(b.x0,b.y0,w,h);
-      var rSize=Math.max(4,Math.min(10,w/20));
-      var rCount=Math.floor(w*h/(rSize*rSize*6));
-      for(var ri=0;ri<rCount;ri++){
-        var rpx=b.x0+((ri*173+7)%Math.max(1,w-rSize*2))+rSize;
-        var rpy=b.y0+((ri*271+13)%Math.max(1,h-rSize*2))+rSize;
-        var rrx=rSize*(.6+((ri*37)%5)*.1),rry=rSize*(.3+((ri*53)%4)*.08);
-        var rang=ri*0.7;
-        var rcols=['#b45309','#78350f','#d97706','#a16207'];
-        ctx.beginPath();ctx.ellipse(rpx,rpy,rrx,rry,rang,0,Math.PI*2);
-        ctx.fillStyle=rcols[ri%4];ctx.globalAlpha=0.75;ctx.fill();ctx.globalAlpha=1;
-        ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.5;ctx.stroke();
+      break;
+    case'sprinkler':
+      ctx.fillStyle='#0b2e3b';ctx.fillRect(b.x0,b.y0,w,h);
+      var sp3=Math.max(14,Math.min(24,h/4));
+      for(var y3=b.y0+sp3*.4;y3<b.y1;y3+=sp3){
+        ctx.fillStyle='#0e7490';ctx.fillRect(b.x0,y3,w,sp3*.4);
       }
-      break;}
-    case'blackrock':{
-      // Black granite: dark base + scattered dark pebble shapes
-      ctx.fillStyle='#0c0a09';ctx.fillRect(b.x0,b.y0,w,h);
-      var rSize2=Math.max(4,Math.min(10,w/20));
-      var rCount2=Math.floor(w*h/(rSize2*rSize2*6));
-      for(var ri2=0;ri2<rCount2;ri2++){
-        var rpx2=b.x0+((ri2*137+5)%Math.max(1,w-rSize2*2))+rSize2;
-        var rpy2=b.y0+((ri2*211+11)%Math.max(1,h-rSize2*2))+rSize2;
-        var rrx2=rSize2*(.6+((ri2*31)%5)*.1),rry2=rSize2*(.3+((ri2*43)%4)*.08);
-        var rang2=ri2*0.9;
-        var rcols2=['#292524','#1c1917','#44403c','#374151'];
-        ctx.beginPath();ctx.ellipse(rpx2,rpy2,rrx2,rry2,rang2,0,Math.PI*2);
-        ctx.fillStyle=rcols2[ri2%4];ctx.globalAlpha=0.85;ctx.fill();ctx.globalAlpha=1;
-        ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;ctx.stroke();
-      }
-      break;}
-    case'pavers':{
-      // Paver stone: clean grid of rectangles with grout lines
-      ctx.fillStyle='#94a3b8';ctx.fillRect(b.x0,b.y0,w,h);
-      var pw=Math.max(16,Math.min(40,w/6)),ph=Math.max(10,Math.min(26,h/5));
-      var grout=Math.max(1.5,pw*.05);
-      ctx.strokeStyle='#64748b';ctx.lineWidth=grout;
-      for(var row=0,gy=b.y0;gy<b.y1;gy+=ph+grout,row++){
-        var xOff=row%2?(pw+grout)*.5:0;
-        for(var gx=b.x0-xOff;gx<b.x1;gx+=pw+grout){
-          var px2=Math.max(b.x0,gx),py2=gy,pw2=Math.min(gx+pw,b.x1)-px2,ph3=Math.min(gy+ph,b.y1)-py2;
-          if(pw2>0&&ph3>0){
-            var pg=ctx.createLinearGradient(px2,py2,px2+pw2,py2+ph3);
-            pg.addColorStop(0,'#e2e8f0');pg.addColorStop(1,'#cbd5e1');
-            ctx.fillStyle=pg;ctx.fillRect(px2+grout*.5,py2+grout*.5,pw2-grout,ph3-grout);
+      // arc spray lines from center-ish points
+      var sr=Math.max(sp3*1.2,16);
+      for(var sy=b.y0+sp3;sy<b.y1;sy+=sp3*2){
+        for(var sx=b.x0+sp3;sx<b.x1;sx+=sp3*2.5){
+          ctx.strokeStyle='rgba(34,211,238,0.5)';ctx.lineWidth=0.8;
+          for(var sa=-0.4;sa<=0.4;sa+=0.2){
+            ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+Math.cos(sa)*sr,sy-Math.sin(Math.abs(sa))*sr);ctx.stroke();
           }
         }
       }
-      break;}
-    case'concrete':{
-      // Concrete: light gray with construction joint grid
-      ctx.fillStyle='#e2e8f0';ctx.fillRect(b.x0,b.y0,w,h);
-      // Subtle texture
-      ctx.fillStyle='rgba(148,163,184,0.12)';
-      for(var cxi=0;cxi<w;cxi+=3){for(var cyi=0;cyi<h;cyi+=3){if((cxi+cyi)%6<3)ctx.fillRect(b.x0+cxi,b.y0+cyi,3,3);}}
-      // Control joints
-      var jSp=Math.max(40,Math.min(80,Math.min(w,h)/3));
-      ctx.strokeStyle='#94a3b8';ctx.lineWidth=1.2;ctx.setLineDash([4,0]);
-      for(var xj=b.x0+jSp;xj<b.x1;xj+=jSp){ctx.beginPath();ctx.moveTo(xj,b.y0);ctx.lineTo(xj,b.y1);ctx.stroke();}
-      for(var yj=b.y0+jSp;yj<b.y1;yj+=jSp){ctx.beginPath();ctx.moveTo(b.x0,yj);ctx.lineTo(b.x1,yj);ctx.stroke();}
-      ctx.setLineDash([]);
-      break;}
+      break;
+    case'rock':
+      ctx.fillStyle='#292524';ctx.fillRect(b.x0,b.y0,w,h);
+      var rSp=Math.max(12,Math.min(20,h/5));
+      for(var y4=b.y0;y4<b.y1;y4+=rSp){
+        ctx.fillStyle=(Math.round((y4-b.y0)/rSp)%2===0)?'#44403c':'#57534e';
+        ctx.fillRect(b.x0,y4,w,rSp*.6);
+      }
+      break;
+    case'firepit':
+      ctx.fillStyle='#2c0a03';ctx.fillRect(b.x0,b.y0,w,h);
+      var fSp=Math.max(12,Math.min(20,h/5));
+      for(var y5=b.y0;y5<b.y1;y5+=fSp){
+        ctx.fillStyle=(Math.round((y5-b.y0)/fSp)%2===0)?'#c2410c':'#ea580c';
+        ctx.fillRect(b.x0,y5,w,fSp*.55);
+      }
+      break;
     case'custom':{ctx.fillStyle=o.customColor||'#6366f1';ctx.fillRect(b.x0,b.y0,w,h);break;}
     default:ctx.fillStyle='rgba(200,200,200,0.4)';ctx.fillRect(b.x0,b.y0,w,h);
   }
   ctx.restore();
 }
 
-// ── Pill label ────────────────────────────────────────────────────────────────
 function pill(ctx,txt,x,y,fg,bg){
   if(S.exportClean)return;
   ctx.save();
