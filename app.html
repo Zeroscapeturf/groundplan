@@ -1066,38 +1066,47 @@ function moveVtx(o,idx,wp){
 }
 
 // ── Canvas & render loop ──────────────────────────────────────────────────────
-var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-function resize(){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;}
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d',{desynchronized:true});
+// Offscreen static canvas: holds bg + grid + all committed objects
+var _sc=document.createElement('canvas'),_sctx=_sc.getContext('2d');
+var _sDirty=true,_sGen=0,_sRendGen=-1,_sPan={x:-1e9,y:-1e9},_sScale=-1;
+function markDirty(){_sDirty=true;}
+function resize(){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;_sDirty=true;}
 window.addEventListener('resize',resize);resize();
 new ResizeObserver(resize).observe(cv);
 
+function renderStatic(W,H){
+  if(_sc.width!==W||_sc.height!==H){_sc.width=W;_sc.height=H;}
+  var x=_sctx;
+  x.clearRect(0,0,W,H);x.fillStyle='#ffffff';x.fillRect(0,0,W,H);
+  var bg=S.bg;
+  if(bg.imgs.length>0){var bimg=bg.imgs[bg.page];if(bimg&&bimg.complete&&bimg.naturalWidth){x.save();x.globalAlpha=bg.op;x.drawImage(bimg,bg.x*S.scale+S.pan.x,bg.y*S.scale+S.pan.y,bg.w*S.scale,bg.h*S.scale);x.restore();}}
+  // Grid — batched into single paths per style
+  var gs=S.ppf*S.scale,ox=((S.pan.x%gs)+gs)%gs,oy=((S.pan.y%gs)+gs)%gs;
+  x.strokeStyle='rgba(34,197,94,0.08)';x.lineWidth=0.5;x.beginPath();
+  for(var gx=ox;gx<W;gx+=gs){x.moveTo(gx,0);x.lineTo(gx,H);}
+  for(var gy=oy;gy<H;gy+=gs){x.moveTo(0,gy);x.lineTo(W,gy);}
+  x.stroke();
+  x.strokeStyle='rgba(34,197,94,0.16)';x.lineWidth=0.8;x.beginPath();
+  for(var gx2=ox;gx2<W;gx2+=gs*5){x.moveTo(gx2,0);x.lineTo(gx2,H);}
+  for(var gy2=oy;gy2<H;gy2+=gs*5){x.moveTo(0,gy2);x.lineTo(W,gy2);}
+  x.stroke();
+  // All committed objects + selection
+  x.save();x.translate(S.pan.x,S.pan.y);x.scale(S.scale,S.scale);
+  for(var oi=0;oi<S.objs.length;oi++){
+    try{drawObject(x,S.objs[oi],S.objs[oi].id===S.sel);}catch(e){try{x.restore();}catch(e2){}x.save();x.translate(S.pan.x,S.pan.y);x.scale(S.scale,S.scale);}
+  }
+  x.restore();
+  _sDirty=false;_sRendGen=_sGen;_sPan={x:S.pan.x,y:S.pan.y};_sScale=S.scale;
+}
 function render(){
   var W=cv.width,H=cv.height;
-  ctx.clearRect(0,0,W,H);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
-  var bg=S.bg;
-  if(bg.imgs.length>0){
-    var bimg=bg.imgs[bg.page];
-    if(bimg&&bimg.complete&&bimg.naturalWidth){
-      ctx.save();ctx.globalAlpha=bg.op;
-      ctx.drawImage(bimg,bg.x*S.scale+S.pan.x,bg.y*S.scale+S.pan.y,bg.w*S.scale,bg.h*S.scale);
-      ctx.restore();
-    }
-  }
-  var gs=S.ppf*S.scale,ox=((S.pan.x%gs)+gs)%gs,oy=((S.pan.y%gs)+gs)%gs;
-  ctx.strokeStyle='rgba(34,197,94,0.08)';ctx.lineWidth=0.5;
-  for(var gx=ox;gx<W;gx+=gs){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke();}
-  for(var gy=oy;gy<H;gy+=gs){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();}
-  ctx.strokeStyle='rgba(34,197,94,0.16)';ctx.lineWidth=0.8;
-  for(var gx2=ox;gx2<W;gx2+=gs*5){ctx.beginPath();ctx.moveTo(gx2,0);ctx.lineTo(gx2,H);ctx.stroke();}
-  for(var gy2=oy;gy2<H;gy2+=gs*5){ctx.beginPath();ctx.moveTo(0,gy2);ctx.lineTo(W,gy2);ctx.stroke();}
+  if(_sDirty||_sRendGen!==_sGen||_sc.width!==W||_sc.height!==H||S.pan.x!==_sPan.x||S.pan.y!==_sPan.y||S.scale!==_sScale)renderStatic(W,H);
+  // Blit static layer (bg + grid + objects)
+  ctx.drawImage(_sc,0,0);
   ctx.save();ctx.translate(S.pan.x,S.pan.y);ctx.scale(S.scale,S.scale);
-  for(var oi=0;oi<S.objs.length;oi++){
-    try{drawObject(ctx,S.objs[oi],S.objs[oi].id===S.sel);}catch(drawErr){
-      // Recover from render error - restore context state
-      try{ctx.restore();}catch(e){}
-      ctx.save();ctx.translate(S.pan.x,S.pan.y);ctx.scale(S.scale,S.scale);
-    }
-  }
+  // Only active preview and selection handles on dynamic layer
+  var selObj=null;for(var oi=0;oi<S.objs.length;oi++){if(S.objs[oi].id===S.sel){selObj=S.objs[oi];break;}}
   if(S.preview){ctx.globalAlpha=0.48;drawObject(ctx,S.preview,false);ctx.globalAlpha=1;}
   // Show anchor dot for line chain start point
   if(S.tool==='line'&&S.lastLinePt&&!S.drawing){
@@ -1460,6 +1469,11 @@ function onPD(e){
 
 function onPM(e){
   e.preventDefault();
+  // Use coalesced events to capture all 240Hz pencil positions between frames
+  var evts=(e.getCoalescedEvents&&e.pointerType==='pen')?e.getCoalescedEvents():[e];
+  for(var _ei=0;_ei<evts.length;_ei++){_onPM(evts[_ei]);}
+}
+function _onPM(e){
   var isPen   = (e.pointerType === 'pen');
   var isTouch = (e.pointerType === 'touch');
   var sc = getXY(e);
@@ -1494,8 +1508,8 @@ function onPM(e){
   if(S.phase==='panning'){var dx=sc.x-prev.x,dy=sc.y-prev.y;S.pan={x:S.pan.x+dx,y:S.pan.y+dy};S.vel={x:dx*.6,y:dy*.6};return;}
   if(S.calMode&&S.calDrawing&&S.calStart){S.preview={type:'line',start:S.calStart,end:wp,color:'#3b82f6',lineWidth:2};return;}
   if(S.phase==='bg-drag'&&S.bg.dragStart){S.bg.x=S.bg.dragStart.ox+(wp.x-S.bg.dragStart.wx);S.bg.y=S.bg.dragStart.oy+(wp.y-S.bg.dragStart.wy);return;}
-  if(S.phase==='dragging'&&S.moveId){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.moveId){S.objs[i]=moveWhole(S.objs[i],wp,S.moveOffs[0]);break;}}return;}
-  if(S.phase==='vtx-drag'&&S.moveId){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.moveId){S.objs[i]=moveVtx(S.objs[i],S.vertexIdx,wp);break;}}return;}
+  if(S.phase==='dragging'&&S.moveId){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.moveId){S.objs[i]=moveWhole(S.objs[i],wp,S.moveOffs[0]);break;}}  _sGen++;return;}
+  if(S.phase==='vtx-drag'&&S.moveId){for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.moveId){S.objs[i]=moveVtx(S.objs[i],S.vertexIdx,wp);break;}}  _sGen++;return;}
   if(S.phase==='curve-drag'&&S.moveId){
     for(var i=0;i<S.objs.length;i++){
       if(S.objs[i].id===S.moveId){
@@ -1506,7 +1520,7 @@ function onPM(e){
         break;
       }
     }
-    render();return;
+    _sGen++;return;
   }
 
   var sn=snapPt(wp);S.snapPt=sn;
@@ -1579,7 +1593,7 @@ function onPU(e){
     S.calDrawing=false;S.calStart=null;S.preview=null;S.drawing=false;S.phase='idle';return;
   }
   if(S.phase==='bg-drag'){S.drawing=false;S.phase='idle';S.bg.dragStart=null;return;}
-  if(S.phase==='curve-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.curveHandleIdx=-1;render();return;}
+  if(S.phase==='curve-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.curveHandleIdx=-1;_sGen++;return;}
   if(S.phase==='dragging'||S.phase==='vtx-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.moveOffs=null;S.vertexIdx=-1;return;}
   // Line: drag-to-draw commit — chains next line from this endpoint
   if(S.tool==='line'&&S.startPt){
@@ -1730,8 +1744,8 @@ function initSigCanvas(cvId,clrId,onSave){
   if(clrBtn)clrBtn.onclick=function(){ctx.clearRect(0,0,cv2.width,cv2.height);ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(10,cv2.height-20);ctx.lineTo(cv2.width-10,cv2.height-20);ctx.stroke();onSave(null);};
 }
 function nid(){return Date.now()+Math.random();}
-function pushUndo(){var snap=JSON.parse(JSON.stringify(S.objs));S.hist.push(snap);if(S.hist.length>40)S.hist.shift();}
-function undo(){if(S.hist.length){S.objs=S.hist.pop();setSel(null);}}
+function pushUndo(){_sGen++;var snap=JSON.parse(JSON.stringify(S.objs));S.hist.push(snap);if(S.hist.length>40)S.hist.shift();}
+function undo(){if(S.hist.length){S.objs=S.hist.pop();_sGen++;setSel(null);}}
 function clearAll(){pushUndo();S.objs=[];S.customItems=[];S.sqftOverrides={};setSel(null);S.chain=[];S.penPts=[];S.penDrawing=false;S.arcPhase=0;S.arcCenter=null;S.preview=null;S.phase='idle';S.drawing=false;S.penDown=false;S.startPt=null;S.touchPtrs=new Map();S.pinching=false;S.polyPts2=[];updChain();try{localStorage.removeItem('gp_autosave');}catch(e){}toast('Canvas cleared ✓');}
 function deleteSel(){if(!S.sel)return;pushUndo();for(var i=0;i<S.objs.length;i++){if(S.objs[i].id===S.sel){S.objs.splice(i,1);break;}}setSel(null);}
 function doneAct(){setSel(null);commitChain(false);S.polyPts=[];S.arcPhase=0;S.arcCenter=null;S.preview=null;S.phase='idle';updChain();}
@@ -1751,7 +1765,7 @@ function commitChain(closed){
   }
   S.chain=[];S.preview=null;S.phase='idle';
 }
-function setSel(id){S.sel=id;document.getElementById('delbtn').style.display=id?'':'none';updRotBtns();}
+function setSel(id){_sGen++;S.sel=id;document.getElementById('delbtn').style.display=id?'':'none';updRotBtns();}
 // Auto-save to localStorage every 15 seconds
 setInterval(function(){
   try{
