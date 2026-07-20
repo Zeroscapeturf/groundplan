@@ -484,10 +484,15 @@ function expandPts(o){
 }
 // Collect all outline segments from every object (for enclosed region detection)
 function allBoundarySegs(){
+  function extSeg(a,b){// extend both ends by 3 canvas units to bridge endpoint gaps
+    var ex=b.x-a.x,ey=b.y-a.y,el=Math.hypot(ex,ey);
+    if(el<0.01)return[a,b];var f=3/el;
+    return[{x:a.x-ex*f,y:a.y-ey*f},{x:b.x+ex*f,y:b.y+ey*f}];
+  }
   var segs=[];
   for(var i=0;i<S.objs.length;i++){
     var o=S.objs[i];
-    if(o.type==='line'||o.type==='curbing'){segs.push([o.start,o.end]);}
+    if(o.type==='line'||o.type==='curbing'){segs.push(extSeg(o.start,o.end));}
     else if(o.type==='rect'){
       var x0=Math.min(o.start.x,o.end.x),x1=Math.max(o.start.x,o.end.x),y0=Math.min(o.start.y,o.end.y),y1=Math.max(o.start.y,o.end.y);
       segs.push([{x:x0,y:y0},{x:x1,y:y0}],[{x:x1,y:y0},{x:x1,y:y1}],[{x:x1,y:y1},{x:x0,y:y1}],[{x:x0,y:y1},{x:x0,y:y0}]);
@@ -495,8 +500,8 @@ function allBoundarySegs(){
       var N=32;for(var j=0;j<N;j++){var a0=j/N*Math.PI*2,a1=(j+1)/N*Math.PI*2;segs.push([{x:o.center.x+o.rx*Math.cos(a0),y:o.center.y+o.ry*Math.sin(a0)},{x:o.center.x+o.rx*Math.cos(a1),y:o.center.y+o.ry*Math.sin(a1)}]);}
     }else if(o.pts&&o.pts.length>=2){
       var pts2=expandPts(o);
-      for(var j2=0;j2<pts2.length-1;j2++)segs.push([pts2[j2],pts2[j2+1]]);
-      if(o.closed)segs.push([pts2[pts2.length-1],pts2[0]]);
+      for(var j2=0;j2<pts2.length-1;j2++)segs.push(extSeg(pts2[j2],pts2[j2+1]));
+      if(o.closed)segs.push(extSeg(pts2[pts2.length-1],pts2[0]));
     }
   }
   return segs;
@@ -510,10 +515,10 @@ function raySegT(ox,oy,dx,dy,ax,ay,bx,by){
 }
 // Shoot rays from pt in all directions; returns approx polygon or null if not enclosed
 function enclosedRegionPoly(pt){
-  var segs=allBoundarySegs(),N=90,maxR=8000,poly=[],missed=0,maxMiss=4;
+  var segs=allBoundarySegs(),N=90,maxR=8000,poly=[],missed=0,maxMiss=8;
   for(var i=0;i<N;i++){
     var ang=i/N*Math.PI*2,dx=Math.cos(ang),dy=Math.sin(ang),minT=maxR;
-    for(var j=0;j<segs.length;j++){var t=raySegT(pt.x,pt.y,dx,dy,segs[j][0].x,segs[j][0].y,segs[j][1].x,segs[j][1].y);if(t>0.5&&t<minT)minT=t;}
+    for(var j=0;j<segs.length;j++){var t=raySegT(pt.x,pt.y,dx,dy,segs[j][0].x,segs[j][0].y,segs[j][1].x,segs[j][1].y);if(t>0.1&&t<minT)minT=t;}
     if(minT>=maxR){missed++;if(missed>maxMiss)return null;/* interpolate later */poly.push(null);}
     else poly.push({x:pt.x+dx*minT,y:pt.y+dy*minT});
   }
@@ -590,7 +595,7 @@ function bbox(o){
   return{x0:x0,x1:x1,y0:y0,y1:y1};
 }
 function snapPt(wp){
-  var thr=16/S.scale;
+  var thr=22/S.scale;
   for(var i=0;i<S.objs.length;i++){
     var pts=allPts(S.objs[i]);
     for(var j=0;j<pts.length;j++){
@@ -1413,10 +1418,12 @@ function onPD(e){
     return;
   }
 
-  // Line — drag from A to B; chains from last endpoint if set
+  // Line — drag from A to B; snaps start to any nearby endpoint
   if(S.tool==='line'){
-    S.startPt=S.lastLinePt?{x:S.lastLinePt.x,y:S.lastLinePt.y,snapped:true}:snapPt(wp);
-    S.drawing=true;S.phase='drawing';
+    var snLine=snapPt(wp);
+    // If snap found a nearby endpoint use it; otherwise chain from lastLinePt if set
+    if(!snLine.snapped&&S.lastLinePt)snLine={x:S.lastLinePt.x,y:S.lastLinePt.y,snapped:true};
+    S.startPt=snLine;S.drawing=true;S.phase='drawing';
     return;
   }
 
