@@ -448,7 +448,7 @@ var S={
   arcPhase:0,arcCenter:null,arcRx:0,
   startPt:null,preview:null,snapPt:null,downSc:null,downTime:0,
   pinchD0:0,pinchS0:1,pinchM0:null,pinchPan0:null,
-  moveId:null,moveOffs:null,vertexIdx:-1,curveHandleIdx:-1,lastDrawTool:null,
+  moveId:null,moveOffs:null,vertexIdx:-1,curveHandleIdx:-1,lastDrawTool:null,lastLinePt:null,
   calMode:false,calStart:null,calDrawing:false,calLine:null,
   activePanel:null,
   bg:{imgs:[],page:0,op:0.45,locked:true,x:0,y:0,w:0,h:0,dragStart:null},
@@ -510,13 +510,20 @@ function raySegT(ox,oy,dx,dy,ax,ay,bx,by){
 }
 // Shoot rays from pt in all directions; returns approx polygon or null if not enclosed
 function enclosedRegionPoly(pt){
-  var segs=allBoundarySegs(),N=90,maxR=8000,poly=[];
+  var segs=allBoundarySegs(),N=90,maxR=8000,poly=[],missed=0,maxMiss=4;
   for(var i=0;i<N;i++){
     var ang=i/N*Math.PI*2,dx=Math.cos(ang),dy=Math.sin(ang),minT=maxR;
     for(var j=0;j<segs.length;j++){var t=raySegT(pt.x,pt.y,dx,dy,segs[j][0].x,segs[j][0].y,segs[j][1].x,segs[j][1].y);if(t>0.5&&t<minT)minT=t;}
-    if(minT>=maxR)return null;
-    poly.push({x:pt.x+dx*minT,y:pt.y+dy*minT});
+    if(minT>=maxR){missed++;if(missed>maxMiss)return null;/* interpolate later */poly.push(null);}
+    else poly.push({x:pt.x+dx*minT,y:pt.y+dy*minT});
   }
+  // Fill any missed ray slots by averaging neighbors
+  for(var k=0;k<poly.length;k++){
+    if(!poly[k]){var prev=poly[(k-1+poly.length)%poly.length],next=poly[(k+1)%poly.length];
+    if(prev&&next)poly[k]={x:(prev.x+next.x)/2,y:(prev.y+next.y)/2};
+    else if(prev)poly[k]=prev;else if(next)poly[k]=next;}
+  }
+  poly=poly.filter(Boolean);
   return poly.length>=4?poly:null;
 }
 function sqFt(o){
@@ -1087,6 +1094,13 @@ function render(){
     }
   }
   if(S.preview){ctx.globalAlpha=0.48;drawObject(ctx,S.preview,false);ctx.globalAlpha=1;}
+  // Show anchor dot for line chain start point
+  if(S.tool==='line'&&S.lastLinePt&&!S.drawing){
+    ctx.beginPath();ctx.arc(S.lastLinePt.x,S.lastLinePt.y,7,0,Math.PI*2);
+    ctx.fillStyle='#22c55e';ctx.fill();
+    ctx.beginPath();ctx.arc(S.lastLinePt.x,S.lastLinePt.y,7,0,Math.PI*2);
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  }
   var ch=S.chain;
   if(ch.length>0&&(S.tool==='line'||S.tool==='curbing'||S.tool==='tap')){
     var isCurb=S.chainType==='curbing';
@@ -1399,9 +1413,10 @@ function onPD(e){
     return;
   }
 
-  // Line — drag from A to B
+  // Line — drag from A to B; chains from last endpoint if set
   if(S.tool==='line'){
-    S.startPt=snapPt(wp);S.drawing=true;S.phase='drawing';
+    S.startPt=S.lastLinePt?{x:S.lastLinePt.x,y:S.lastLinePt.y,snapped:true}:snapPt(wp);
+    S.drawing=true;S.phase='drawing';
     return;
   }
 
@@ -1559,15 +1574,16 @@ function onPU(e){
   if(S.phase==='bg-drag'){S.drawing=false;S.phase='idle';S.bg.dragStart=null;return;}
   if(S.phase==='curve-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.curveHandleIdx=-1;render();return;}
   if(S.phase==='dragging'||S.phase==='vtx-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.moveOffs=null;S.vertexIdx=-1;return;}
-  // Line: drag-to-draw commit
+  // Line: drag-to-draw commit — chains next line from this endpoint
   if(S.tool==='line'&&S.startPt){
     var ep=snapPt(wp);
     if(d2(S.startPt,ep)>6/S.scale){
       pushUndo();
       var lid=nid();
       S.objs.push({id:lid,type:'lineshape',pts:[S.startPt,ep],closed:false,curved:false,controls:[null],color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'});
-      S.lastDrawTool='line';setSel(lid);setTool('select');
-      toast('Line drawn — drag orange dot to curve it');
+      S.lastLinePt={x:ep.x,y:ep.y};
+      S.lastDrawTool='line';
+      toast('Line drawn — tap endpoint dot to continue, orange dot to curve');
     }
     S.startPt=null;S.preview=null;S.drawing=false;S.phase='idle';return;
   }
@@ -1772,6 +1788,7 @@ function updChain(){
 }
 function setTool(t){
   closeAll();
+  if(t!=='line')S.lastLinePt=null;
   commitChain(false);S.tool=t;S.chain=[];S.penPts=[];S.penDrawing=false;S.arcPhase=0;S.arcCenter=null;S.preview=null;S.phase='idle';S.drawing=false;S.penDown=false;S.startPt=null;S.touchPtrs=new Map();S.pinching=false;S.polyPts2=[];
   setSel(null);closeAll();
   document.querySelectorAll('.tb').forEach(function(b){b.classList.toggle('on',b.dataset.tool===t);});
@@ -2748,7 +2765,7 @@ async function sharePDF(){
 })();
 
 document.addEventListener('keydown',function(e){
-  if(e.key==='Escape'){setSel(null);commitChain(false);S.polyPts=[];S.arcPhase=0;S.arcCenter=null;S.preview=null;S.phase='idle';updChain();updHint();}
+  if(e.key==='Escape'){setSel(null);commitChain(false);S.lastLinePt=null;S.polyPts=[];S.arcPhase=0;S.arcCenter=null;S.preview=null;S.phase='idle';updChain();updHint();}
   if(e.key==='Enter'&&(S.tool==='line'||S.tool==='curbing'||S.tool==='tap')){if(S.chain.length>2)closeChain();else abandonChain();}
   if(e.key==='z'&&(e.metaKey||e.ctrlKey))undo();
   if((e.key==='Delete'||e.key==='Backspace')&&!e.target.matches('input'))deleteSel();
