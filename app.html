@@ -2111,7 +2111,7 @@ function renderSum(){
       var lbl=fo2.areaLabel||('Area '+(i+1));
       html+='<div class="sum-row" style="flex-wrap:wrap;gap:4px;align-items:center">'
         +'<div class="sum-sw" style="background:'+swCol+';flex-shrink:0"></div>'
-        +'<input type="text" value="'+lbl+'" data-oid="'+fid2+'" onchange="setAreaLabel(this)" '
+        +'<input type="text" value="'+lbl+'" data-oid="'+fid2+'" oninput="setAreaLabel(this)" '
         +'style="flex:1;min-width:80px;background:#111827;border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#f9fafb;padding:3px 7px;font-size:12px;font-weight:600">'
         +'<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">'
         +'<input type="number" data-fid="'+fid2+'" value="'+sf.toFixed(1)+'" min="0" step="0.5" onchange="handleSqftChange(this);renderSum()" '
@@ -2233,7 +2233,7 @@ function setAreaLabel(el){
   for(var i=0;i<S.objs.length;i++){
     if(S.objs[i].id===oid){S.objs[i].areaLabel=el.value;break;}
   }
-  render();
+  _sGen++;
 }
 
 function addCustomItem(){
