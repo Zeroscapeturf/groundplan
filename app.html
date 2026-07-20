@@ -394,40 +394,30 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
 // ── Data ──────────────────────────────────────────────────────────────────────
 function matSvg(id){
   var s={
-    'palmtree':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#14532d"/><line x1="0" y1="9" x2="36" y2="9" stroke="#166534" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#15803d" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#166534" stroke-width="4.5"/></svg>',
-    'fruittree':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#1a4731"/><line x1="0" y1="9" x2="36" y2="9" stroke="#22863a" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#2da44e" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#22863a" stroke-width="4.5"/></svg>',
-    'drip':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#0c4a6e"/><line x1="0" y1="9" x2="36" y2="9" stroke="#0ea5e9" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#38bdf8" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#0ea5e9" stroke-width="4.5"/></svg>',
-    'sprinkler':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#164e63"/><line x1="0" y1="9" x2="36" y2="9" stroke="#22d3ee" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#67e8f9" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#22d3ee" stroke-width="4.5"/></svg>',
-    'bush':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#365314"/><line x1="0" y1="9" x2="36" y2="9" stroke="#84cc16" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#a3e635" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#84cc16" stroke-width="4.5"/></svg>',
-    'rock':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#44403c"/><line x1="0" y1="9" x2="36" y2="9" stroke="#78716c" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#a8a29e" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#78716c" stroke-width="4.5"/></svg>',
-    'firepit':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#431407"/><line x1="0" y1="9" x2="36" y2="9" stroke="#f97316" stroke-width="4.5"/><line x1="0" y1="18" x2="36" y2="18" stroke="#fb923c" stroke-width="4.5"/><line x1="0" y1="27" x2="36" y2="27" stroke="#f97316" stroke-width="4.5"/></svg>'
+    'turf':    '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#16a34a"/></svg>',
+    'fringe':  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#15803d"/></svg>',
+    'putting': '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#4ade80"/></svg>',
+    'concrete':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#d1d5db"/></svg>',
+    'rockarea':'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#92400e"/></svg>'
   };
   return s[id]||('<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" fill="#6366f1" rx="2"/></svg>');
 }
 var MATS=[
-  {id:'palmtree',  name:'Palm Tree',      sub:'PALM PLANTING',      sw:'#14532d',fg:'rgba(255,255,255,0.9)'},
-  {id:'fruittree', name:'Fruit Tree',     sub:'FRUIT TREE ZONE',    sw:'#1a4731',fg:'rgba(255,255,255,0.9)'},
-  {id:'drip',      name:'Drip System',    sub:'DRIP IRRIGATION',    sw:'#0c4a6e',fg:'rgba(255,255,255,0.92)'},
-  {id:'sprinkler', name:'Sprinkler Box',  sub:'SPRINKLER ZONE',     sw:'#164e63',fg:'rgba(255,255,255,0.92)'},
-  {id:'bush',      name:'Bush / Shrubbery',sub:'SHRUB PLANTING',    sw:'#365314',fg:'rgba(255,255,255,0.9)'},
-  {id:'rock',      name:'Rock',           sub:'ROCK / GRAVEL',      sw:'#44403c',fg:'rgba(255,255,255,0.88)'},
-  {id:'firepit',   name:'Fire Pit',       sub:'FIRE FEATURE',       sw:'#431407',fg:'rgba(255,255,255,0.95)'},
-  {id:'custom',    name:'Custom Color',   sub:'',                    sw:'#6366f1',fg:'rgba(255,255,255,0.95)',custom:true}
+  {id:'turf',    name:'Synthetic Turf', sub:'SYNTHETIC GRASS',    sw:'#16a34a',fg:'#0f172a'},
+  {id:'fringe',  name:'Fringe',         sub:'FRINGE TURF',        sw:'#15803d',fg:'#f9fafb'},
+  {id:'putting', name:'Putting Green',  sub:'PUTTING GREEN',      sw:'#4ade80',fg:'#0f172a'},
+  {id:'concrete',name:'Concrete',       sub:'CONCRETE SURFACE',   sw:'#d1d5db',fg:'#0f172a'},
+  {id:'rockarea',name:'Rock Area',      sub:'DECOMPOSED GRANITE', sw:'#92400e',fg:'#f9fafb'},
+  {id:'custom',  name:'Custom Color',   sub:'',                    sw:'#6366f1',fg:'#fff',custom:true}
 ];
 var STAMPS=[
-  {id:'palm',     name:'Palm Tree',   icon:'&#127796;',r:28},
-  {id:'fruit',    name:'Fruit Tree',  icon:'&#127815;',r:24},
-  {id:'bush',     name:'Bush/Shrub',  icon:'&#127807;',r:18},
-  {id:'rock',     name:'Rock',        icon:'&#9899;',  r:16},
-  {id:'fire',     name:'Fire Pit',    icon:'&#128293;',r:22},
-  {id:'pool',     name:'Pool',        icon:'&#128167;',r:34},
-  {id:'hottub',   name:'Hot Tub',     icon:'&#9832;',  r:22},
-  {id:'bbq',      name:'BBQ Grill',   icon:'&#127859;',r:20},
-  {id:'bench',    name:'Bench',       icon:'&#127756;',r:18},
-  {id:'shed',     name:'Shed',        icon:'&#127968;',r:28},
-  {id:'ac',       name:'AC Unit',     icon:'&#10052;', r:18},
-  {id:'fountain', name:'Fountain',    icon:'&#128166;',r:22},
-  {id:'paver',    name:'Paver Stone', icon:'&#11036;', r:22, pw:2, ph:3}
+  {id:'palm',      name:'Palm Tree',     icon:'&#127796;',r:28},
+  {id:'fruit',     name:'Fruit Tree',    icon:'&#127815;',r:24},
+  {id:'bush',      name:'Bush / Shrub',  icon:'&#127807;',r:18},
+  {id:'drip',      name:'Drip System',   icon:'&#128167;',r:14},
+  {id:'sprinkler', name:'Sprinkler Box', icon:'&#9875;',  r:16},
+  {id:'rock',      name:'Rock',          icon:'&#9899;',  r:16},
+  {id:'firepit',   name:'Fire Pit',      icon:'&#128293;',r:22}
 ];
 var TOOLS=[
   {id:'select',  icon:'&#8598;',  lbl:'Select'},
@@ -451,7 +441,7 @@ var SCOLS=['#111827','#374151','#6b7280','#ffffff','#22c55e','#3b82f6','#ef4444'
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var S={
-  tool:'pen',mat:'palmtree',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',
+  tool:'pen',mat:'turf',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',
   ppf:40,objs:[],sel:null,hist:[],
   pan:{x:80,y:100},scale:1,vel:{x:0,y:0},rafPan:null,
   drawing:false,penDown:false,pinching:false,touchPtrs:new Map(),lastPos:null,phase:'idle',penSize:6,penSmooth:true,lineStyle:'solid',strokeWidth:2,polyPts2:[],
@@ -823,69 +813,11 @@ function renderFill(ctx,o){
   var b=bbox(o),w=b.x1-b.x0,h=b.y1-b.y0;
   if(w<1||h<1)return;
   ctx.save();ctx.beginPath();tracePath(ctx,o);ctx.clip();
-  // Helper: horizontal stripes
-  function stripes(bg,s1,s2,sw){
-    ctx.fillStyle=bg;ctx.fillRect(b.x0,b.y0,w,h);
-    var sp=Math.max(sw,Math.min(sw*2,h/6));
-    for(var y=b.y0;y<b.y1;y+=sp){
-      ctx.fillStyle=(Math.round((y-b.y0)/sp)%2===0)?s1:s2;
-      ctx.fillRect(b.x0,y,w,sp*.55);
-    }
-  }
-  switch(o.fill){
-    case'palmtree': stripes('#0d3320','#166534','#14532d',14);break;
-    case'fruittree':stripes('#102b1e','#1a5c2f','#1e7340',14);break;
-    case'bush':     stripes('#1e3a0a','#4a7c10','#5d9e14',14);break;
-    case'drip':
-      ctx.fillStyle='#0a3347';ctx.fillRect(b.x0,b.y0,w,h);
-      var sp2=Math.max(12,Math.min(20,h/5));
-      for(var y2=b.y0+sp2*.4;y2<b.y1;y2+=sp2){
-        ctx.fillStyle='#0284c7';ctx.fillRect(b.x0,y2,w,sp2*.45);
-      }
-      // small circles for drip emitters
-      var er=Math.max(2,sp2*.22);
-      for(var ey=b.y0+sp2*.65;ey<b.y1;ey+=sp2){
-        for(var ex=b.x0+sp2*.5;ex<b.x1;ex+=sp2*1.8){
-          ctx.beginPath();ctx.arc(ex,ey,er,0,Math.PI*2);ctx.fillStyle='#38bdf8';ctx.fill();
-        }
-      }
-      break;
-    case'sprinkler':
-      ctx.fillStyle='#0b2e3b';ctx.fillRect(b.x0,b.y0,w,h);
-      var sp3=Math.max(14,Math.min(24,h/4));
-      for(var y3=b.y0+sp3*.4;y3<b.y1;y3+=sp3){
-        ctx.fillStyle='#0e7490';ctx.fillRect(b.x0,y3,w,sp3*.4);
-      }
-      // arc spray lines from center-ish points
-      var sr=Math.max(sp3*1.2,16);
-      for(var sy=b.y0+sp3;sy<b.y1;sy+=sp3*2){
-        for(var sx=b.x0+sp3;sx<b.x1;sx+=sp3*2.5){
-          ctx.strokeStyle='rgba(34,211,238,0.5)';ctx.lineWidth=0.8;
-          for(var sa=-0.4;sa<=0.4;sa+=0.2){
-            ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+Math.cos(sa)*sr,sy-Math.sin(Math.abs(sa))*sr);ctx.stroke();
-          }
-        }
-      }
-      break;
-    case'rock':
-      ctx.fillStyle='#292524';ctx.fillRect(b.x0,b.y0,w,h);
-      var rSp=Math.max(12,Math.min(20,h/5));
-      for(var y4=b.y0;y4<b.y1;y4+=rSp){
-        ctx.fillStyle=(Math.round((y4-b.y0)/rSp)%2===0)?'#44403c':'#57534e';
-        ctx.fillRect(b.x0,y4,w,rSp*.6);
-      }
-      break;
-    case'firepit':
-      ctx.fillStyle='#2c0a03';ctx.fillRect(b.x0,b.y0,w,h);
-      var fSp=Math.max(12,Math.min(20,h/5));
-      for(var y5=b.y0;y5<b.y1;y5+=fSp){
-        ctx.fillStyle=(Math.round((y5-b.y0)/fSp)%2===0)?'#c2410c':'#ea580c';
-        ctx.fillRect(b.x0,y5,w,fSp*.55);
-      }
-      break;
-    case'custom':{ctx.fillStyle=o.customColor||'#6366f1';ctx.fillRect(b.x0,b.y0,w,h);break;}
-    default:ctx.fillStyle='rgba(200,200,200,0.4)';ctx.fillRect(b.x0,b.y0,w,h);
-  }
+  var col={'turf':'#22c55e','fringe':'#16a34a','putting':'#4ade80','concrete':'#d1d5db','rockarea':'#92400e','custom':o.customColor||'#6366f1'}[o.fill]||'rgba(180,180,180,0.35)';
+  ctx.fillStyle=col;ctx.fillRect(b.x0,b.y0,w,h);
+  // subtle diagonal hatch overlay to distinguish fills when placed side by side
+  if(o.fill==='concrete'){ctx.strokeStyle='rgba(0,0,0,0.07)';ctx.lineWidth=1;var gs=Math.max(20,Math.min(40,w/6));ctx.setLineDash([]);for(var xg=b.x0;xg<b.x1+h;xg+=gs){ctx.beginPath();ctx.moveTo(xg,b.y0);ctx.lineTo(xg-h,b.y1);ctx.stroke();}}
+  if(o.fill==='rockarea'){ctx.fillStyle='rgba(0,0,0,0.12)';for(var ri=0,rn=Math.floor(w*h/280);ri<rn;ri++){var rp={x:b.x0+((ri*173+7)%Math.max(1,w)),y:b.y0+((ri*271+13)%Math.max(1,h))},rr=2+((ri*37)%4);ctx.beginPath();ctx.ellipse(rp.x,rp.y,rr*1.4,rr*0.7,ri*0.6,0,Math.PI*2);ctx.fill();}}
   ctx.restore();
 }
 
@@ -1741,7 +1673,17 @@ function onPU(e){
       S.objs.push({id:lid,type:'lineshape',pts:[S.startPt,ep],closed:false,curved:false,controls:[null],color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'});
       S.lastLinePt={x:ep.x,y:ep.y};
       S.lastDrawTool='line';
-      toast('Line drawn — tap endpoint dot to continue, orange dot to curve');
+      // Check if this line just closed a region
+      var _closedArea=false;
+      if(ep.snapped){
+        var _offs=[{x:24,y:0},{x:-24,y:0},{x:0,y:24},{x:0,y:-24},{x:18,y:18},{x:-18,y:18}];
+        for(var _oi=0;_oi<_offs.length&&!_closedArea;_oi++){
+          var _tp={x:ep.x+_offs[_oi].x/S.scale,y:ep.y+_offs[_oi].y/S.scale};
+          var _rp=enclosedRegionPoly(_tp);
+          if(_rp){var _sqft=Math.abs(polyArea(_rp))/(S.ppf*S.ppf);toast('Closed area: ~'+Math.round(_sqft)+' sq ft — use Fill tool to paint');_closedArea=true;}
+        }
+      }
+      if(!_closedArea)toast('Line drawn — tap endpoint dot to continue');
     }
     S.startPt=null;S.preview=null;S.drawing=false;S.phase='idle';return;
   }
@@ -2894,6 +2836,17 @@ async function sharePDF(){
     }
     mg.appendChild(b);
   }
+  // Add place-items section to materials panel
+  var _ph=document.createElement('div');
+  _ph.style.cssText='color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin:14px 0 8px;border-top:1px solid rgba(255,255,255,0.07);padding-top:12px';
+  _ph.textContent='Place Items';mg.appendChild(_ph);
+  for(var si2=0;si2<STAMPS.length;si2++){
+    var _st=STAMPS[si2];
+    var _sb=document.createElement('button');_sb.className='stb'+(_st.id===S.stamp?' on':'');_sb.dataset.stamp=_st.id;
+    _sb.innerHTML='<span class="si">'+_st.icon+'</span><span class="sn">'+_st.name+'</span>';
+    _sb.onclick=(function(sid){return function(){setStamp(sid);setTool('stamp');closeAll();};})(STAMPS[si2].id);
+    mg.appendChild(_sb);
+  }
   var stg=document.getElementById('stg');
   for(var i=0;i<STAMPS.length;i++){
     var st=STAMPS[i];
@@ -2918,7 +2871,7 @@ async function sharePDF(){
     b.onclick=(function(pf,pl){return function(){S.ppf=pf;document.querySelectorAll('.pr').forEach(function(pb){pb.classList.toggle('on',pb.textContent===pl);});toast('Scale: '+pl+' \u2713');};})(p.f,p.l);
     prs.appendChild(b);
   }
-  setMat('zeroblade');setStamp('palm');setCol('#111827');document.getElementById('stamp-lbl-b').textContent='Materials';
+  setMat('turf');setStamp('palm');setCol('#111827');document.getElementById('stamp-lbl-b').textContent='Materials';
   setTool('pen');
 })();
 
