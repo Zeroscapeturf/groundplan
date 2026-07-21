@@ -31,10 +31,13 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
 #fill-lbl{color:#f9fafb;font-size:11px;font-weight:600}
 #stamp-ind{position:absolute;top:12px;right:10px;background:rgba(15,20,30,0.93);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:6px 11px;display:none;align-items:center;gap:6px;z-index:50}
 #stamp-lbl{color:#fde68a;font-size:11px;font-weight:600}
-#bg-bar{position:absolute;top:12px;left:10px;background:rgba(15,20,30,0.95);border:1px solid rgba(59,130,246,0.4);border-radius:10px;padding:5px 9px;display:none;align-items:center;gap:6px;z-index:55;flex-wrap:wrap;max-width:96vw}
-#bg-name{color:#93c5fd;font-size:10px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#bg-op{width:56px;accent-color:#3b82f6;cursor:pointer}
-#bg-opv{color:#6b7280;font-size:9px;width:24px}
+#bg-bar{position:absolute;top:12px;left:10px;background:rgba(15,20,30,0.95);border:1px solid rgba(59,130,246,0.4);border-radius:10px;padding:6px 10px;display:none;flex-direction:column;gap:5px;z-index:55;width:min(280px,92vw)}
+#bg-bar-row1,#bg-bar-row2{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+#bg-name{color:#93c5fd;font-size:10px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.bg-slider-wrap{display:flex;align-items:center;gap:4px;flex:1}
+.bg-slider-lbl{color:#6b7280;font-size:9px;white-space:nowrap}
+.bg-slider-val{color:#93c5fd;font-size:9px;width:30px;text-align:right;flex-shrink:0}
+#bg-op,#bg-sz,#bg-ang{flex:1;accent-color:#3b82f6;cursor:pointer;min-width:0}
 .bb{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:#9ca3af;font-size:10px;cursor:pointer;padding:2px 6px}
 .bb:hover{color:#f9fafb}.bb.on{background:rgba(59,130,246,0.18);border-color:#3b82f6;color:#93c5fd}
 #file-in,#load-in{display:none}
@@ -209,16 +212,23 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
   <div id="fill-ind"><div id="fill-sw"></div><span id="fill-lbl"></span><span style="color:#6b7280;font-size:9px;margin-left:2px">tap shape</span></div>
   <div id="stamp-ind"><span id="stamp-lbl"></span><span style="color:#6b7280;font-size:9px;margin-left:2px">tap to place</span></div>
   <div id="bg-bar">
-    <span style="color:#3b82f6;font-size:11px">&#127968;</span>
-    <span id="bg-name">Background</span>
-    <div id="bg-pages" style="display:flex;gap:3px"></div>
-    <input type="range" id="bg-op" min="5" max="100" value="45" oninput="setBgOp(this.value)">
-    <span id="bg-opv">45%</span>
-    <button class="bb" id="bg-lock" onclick="toggleBgLock()">&#128274; Lock</button>
-    <button class="bb" onclick="scaleBg(0.85)">&#8722;</button>
-    <button class="bb" onclick="scaleBg(1.18)">&#43;</button>
-    <button class="bb" onclick="fitBg()">Fit</button>
-    <button class="bb" onclick="removeBg()" style="color:#f87171">&#10005;</button>
+    <div id="bg-bar-row1">
+      <span style="color:#3b82f6;font-size:11px">&#127968;</span>
+      <span id="bg-name">Background</span>
+      <div id="bg-pages" style="display:flex;gap:3px"></div>
+      <button class="bb" id="bg-lock" onclick="toggleBgLock()">&#128274; Lock</button>
+      <button class="bb" onclick="fitBg()">Fit</button>
+      <button class="bb" onclick="removeBg()" style="color:#f87171">&#10005;</button>
+    </div>
+    <div id="bg-bar-row2">
+      <div class="bg-slider-wrap"><span class="bg-slider-lbl">Opacity</span><input type="range" id="bg-op" min="5" max="100" value="45" oninput="setBgOp(this.value)"><span class="bg-slider-val" id="bg-opv">45%</span></div>
+    </div>
+    <div id="bg-bar-row2">
+      <div class="bg-slider-wrap"><span class="bg-slider-lbl">Size</span><input type="range" id="bg-sz" min="10" max="300" value="100" oninput="setBgSize(this.value)"><span class="bg-slider-val" id="bg-szv">100%</span></div>
+    </div>
+    <div id="bg-bar-row2">
+      <div class="bg-slider-wrap"><span class="bg-slider-lbl">Angle</span><input type="range" id="bg-ang" min="-180" max="180" value="0" oninput="setBgAngle(this.value)"><span class="bg-slider-val" id="bg-angv">0°</span></div>
+    </div>
   </div>
   <div id="sb"><div id="sb-bar" style="width:60px"></div><div class="sbr"><span>0</span><span>5ft</span></div><div class="sbi" id="sbi">1ft=40px</div></div>
   <div id="obc">0 objects</div>
@@ -461,7 +471,7 @@ var S={
   moveId:null,moveOffs:null,vertexIdx:-1,curveHandleIdx:-1,lastDrawTool:null,lastLinePt:null,
   calMode:false,calStart:null,calDrawing:false,calLine:null,
   activePanel:null,
-  bg:{imgs:[],page:0,op:0.45,locked:true,x:0,y:0,w:0,h:0,dragStart:null},
+  bg:{imgs:[],page:0,op:0.45,locked:true,x:0,y:0,w:0,h:0,scl:1,angle:0,_baseW:0,_baseH:0,dragStart:null},
   sigCustomer:null,sigRep:null,sigCustomerDate:'',sigRepDate:''
 };
 
@@ -1159,7 +1169,7 @@ function renderStatic(W,H){
   var x=_sctx;
   x.clearRect(0,0,W,H);x.fillStyle='#ffffff';x.fillRect(0,0,W,H);
   var bg=S.bg;
-  if(bg.imgs.length>0){var bimg=bg.imgs[bg.page];if(bimg&&bimg.complete&&bimg.naturalWidth){x.save();x.globalAlpha=bg.op;x.drawImage(bimg,bg.x*S.scale+S.pan.x,bg.y*S.scale+S.pan.y,bg.w*S.scale,bg.h*S.scale);x.restore();}}
+  if(bg.imgs.length>0){var bimg=bg.imgs[bg.page];if(bimg&&bimg.complete&&bimg.naturalWidth){x.save();x.globalAlpha=bg.op;var _bcx=(bg.x+bg.w/2)*S.scale+S.pan.x,_bcy=(bg.y+bg.h/2)*S.scale+S.pan.y;x.translate(_bcx,_bcy);x.rotate((bg.angle||0)*Math.PI/180);x.drawImage(bimg,-bg.w*S.scale/2,-bg.h*S.scale/2,bg.w*S.scale,bg.h*S.scale);x.restore();}}
   // Grid — batched into single paths per style
   var gs=S.ppf*S.scale,ox=((S.pan.x%gs)+gs)%gs,oy=((S.pan.y%gs)+gs)%gs;
   x.strokeStyle='rgba(34,197,94,0.08)';x.lineWidth=0.5;x.beginPath();
@@ -2074,12 +2084,12 @@ function parseMoasureZip(bytes,fname){
   mountBg(found.map(function(f){return f.img;}),fname);
 }
 function mountBg(imgs,fname){
-  S.bg.imgs=imgs;S.bg.page=0;S.bg.op=0.45;S.bg.locked=true;
+  S.bg.imgs=imgs;S.bg.page=0;S.bg.op=0.45;S.bg.locked=true;S.bg.scl=1;S.bg.angle=0;
   var first=imgs[0];
   function setup(){
     var iw=first.naturalWidth||800,ih=first.naturalHeight||600;
     var visW=cv.width/S.scale,visH=cv.height/S.scale,W=visW*0.85;
-    S.bg.w=W;S.bg.h=W*(ih/iw);
+    S.bg.w=W;S.bg.h=W*(ih/iw);S.bg._baseW=W;S.bg._baseH=W*(ih/iw);
     S.bg.x=(-S.pan.x/S.scale)+(visW-W)/2;S.bg.y=(-S.pan.y/S.scale)+(visH-S.bg.h)/2;
     document.getElementById('bg-bar').style.display='flex';
     document.getElementById('bg-name').textContent=fname.replace(/\.[^.]+$/,'').substring(0,22);
@@ -2087,15 +2097,18 @@ function mountBg(imgs,fname){
     if(imgs.length>1){imgs.forEach(function(im,idx){var b=document.createElement('button');b.className='bb'+(idx===0?' on':'');b.textContent='Pg '+(idx+1);b.onclick=function(){S.bg.page=idx;pb.querySelectorAll('.bb').forEach(function(x,xi){x.classList.toggle('on',xi===idx);});};pb.appendChild(b);});}
     document.getElementById('bg-lock').classList.remove('on');document.getElementById('bg-lock').textContent='\uD83D\uDD12 Lock';
     document.getElementById('bg-op').value=Math.round(S.bg.op*100);document.getElementById('bg-opv').textContent=Math.round(S.bg.op*100)+'%';
-    toast('Background loaded \u2713  Unlock to reposition');
+    document.getElementById('bg-sz').value=100;document.getElementById('bg-szv').textContent='100%';
+    document.getElementById('bg-ang').value=0;document.getElementById('bg-angv').textContent='0\u00B0';
+    render();toast('Photo loaded \u2713  Unlock to reposition, use sliders to adjust');
   }
   if(first.complete&&first.naturalWidth)setup();else first.onload=setup;
 }
-function setBgOp(v){S.bg.op=v/100;document.getElementById('bg-opv').textContent=v+'%';}
+function setBgOp(v){S.bg.op=v/100;document.getElementById('bg-opv').textContent=v+'%';render();}
+function setBgSize(v){var f=v/100;var cx=S.bg.x+S.bg.w/2,cy=S.bg.y+S.bg.h/2;S.bg.w=S.bg._baseW*f;S.bg.h=S.bg._baseH*f;S.bg.x=cx-S.bg.w/2;S.bg.y=cy-S.bg.h/2;document.getElementById('bg-szv').textContent=v+'%';render();}
+function setBgAngle(v){S.bg.angle=parseFloat(v);document.getElementById('bg-angv').textContent=v+'\u00B0';render();}
 function toggleBgLock(){S.bg.locked=!S.bg.locked;var btn=document.getElementById('bg-lock');btn.classList.toggle('on',!S.bg.locked);btn.textContent=S.bg.locked?'\uD83D\uDD12 Lock':'\uD83D\uDD13 Unlock';toast(S.bg.locked?'Background locked':'Unlocked \u2014 drag to reposition');}
-function scaleBg(f){var cx=S.bg.x+S.bg.w/2,cy=S.bg.y+S.bg.h/2;S.bg.w*=f;S.bg.h*=f;S.bg.x=cx-S.bg.w/2;S.bg.y=cy-S.bg.h/2;}
-function fitBg(){var visW=cv.width/S.scale,visH=cv.height/S.scale;S.bg.x=(-S.pan.x/S.scale)+(visW-S.bg.w)/2;S.bg.y=(-S.pan.y/S.scale)+(visH-S.bg.h)/2;toast('Background centered');}
-function removeBg(){S.bg.imgs.forEach(function(img){if(img._blobUrl)URL.revokeObjectURL(img._blobUrl);});S.bg.imgs=[];document.getElementById('bg-bar').style.display='none';}
+function fitBg(){var visW=cv.width/S.scale,visH=cv.height/S.scale;S.bg.x=(-S.pan.x/S.scale)+(visW-S.bg.w)/2;S.bg.y=(-S.pan.y/S.scale)+(visH-S.bg.h)/2;render();toast('Background centered');}
+function removeBg(){S.bg.imgs.forEach(function(img){if(img._blobUrl)URL.revokeObjectURL(img._blobUrl);});S.bg.imgs=[];S.bg.angle=0;document.getElementById('bg-bar').style.display='none';render();}
 
 // ── Paver rotation ───────────────────────────────────────────────────────────
 function rotatePaver(deg){
