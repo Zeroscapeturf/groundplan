@@ -2695,7 +2695,7 @@ var _cn=cname||'Customer';
     +'<p style="margin:0 0 28px 0;font-size:10pt;color:#444">This Statement of Work outlines our commitment to delivering exceptional results for your Turf project. We look forward to transforming your vision into reality. Removal rebates are subject to Water Conservancy regulation and not guaranteed by ZeroScapeTurf. This estimate is based on the information provided and is subject to change.</p>'
     +'<div style="margin-top:auto;padding-top:40px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">'
     +'<div style="font-size:9pt;color:#888">ZeroScapeTurf &bull; Dax@zeroscapeturf.com &bull; (385) 462-7420</div>'
-    +'<div style="border:1.5px solid #ccc;border-radius:6px;padding:6px 18px;font-size:9pt;color:#555">Initials ______</div>'
+    +'<div class="init-field" style="border:2px dashed #15803d;border-radius:6px;padding:7px 20px;font-size:9pt;color:#15803d;font-weight:600;cursor:pointer;min-width:110px;text-align:center;background:#f0fdf4">&#9998; Tap to Initial</div>'
     +'</div>'
     +'</div>';
 
@@ -2714,7 +2714,7 @@ var _cn=cname||'Customer';
     +'<p style="margin:0 0 16px 0;color:#333">The homeowner commits to remit an initial payment equivalent to <strong>50% of the total sum</strong> outlined in the provided table before the commencement of the turf installation project. The remaining balance is to be settled upon the project\'s successful completion. Any work beyond the explicitly stated Scope of Work in this Turf installation contract may incur supplementary charges. The synthetic turf system is owned by ZeroScapeTurf until paid in full and may be removed or liened if not paid as agreed. (Unless approved for Financing)</p>'
     +'<div style="margin-top:auto;padding-top:40px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">'
     +'<div style="font-size:9pt;color:#888">ZeroScapeTurf &bull; Dax@zeroscapeturf.com &bull; (385) 462-7420</div>'
-    +'<div style="border:1.5px solid #ccc;border-radius:6px;padding:6px 18px;font-size:9pt;color:#555">Initials ______</div>'
+    +'<div class="init-field" style="border:2px dashed #15803d;border-radius:6px;padding:7px 20px;font-size:9pt;color:#15803d;font-weight:600;cursor:pointer;min-width:110px;text-align:center;background:#f0fdf4">&#9998; Tap to Initial</div>'
     +'</div>'
     +'</div>';
 
@@ -2748,12 +2748,12 @@ var _cn=cname||'Customer';
     +'<p style="margin:0 0 0 0;font-size:9pt;color:#888"><em>This Contract shall be governed by and construed in accordance with the laws of the state of Utah.</em></p>'
     +'<div style="margin-top:auto;padding-top:24px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">'
     +'<div style="font-size:9pt;color:#888">ZeroScapeTurf &bull; Dax@zeroscapeturf.com &bull; (385) 462-7420</div>'
-    +'<div style="border:1.5px solid #ccc;border-radius:6px;padding:6px 18px;font-size:9pt;color:#555">Initials ______</div>'
+    +'<div class="init-field" style="border:2px dashed #15803d;border-radius:6px;padding:7px 20px;font-size:9pt;color:#15803d;font-weight:600;cursor:pointer;min-width:110px;text-align:center;background:#f0fdf4">&#9998; Tap to Initial</div>'
     +'</div>'
     +'</div>';
 
-  var _custSigHtml='<div style="border-bottom:2px solid #111;height:60px;margin-bottom:6px"></div>';
-  var _repSigHtml='<div style="border-bottom:2px solid #111;height:60px;margin-bottom:6px"></div>';
+  var _custSigHtml='<div class="sig-field" data-label="Customer Signature" style="border:2px dashed #15803d;border-radius:8px;height:80px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#f0fdf4;color:#15803d;font-size:13px;font-weight:600">&#9998; Tap to Sign</div>';
+  var _repSigHtml='<div class="sig-field" data-label="ZeroScape Turf Representative" style="border:2px dashed #9ca3af;border-radius:8px;height:80px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;background:#f9fafb;color:#6b7280;font-size:13px;font-weight:600">Rep signs in GroundPlan app</div>';
   var _custDate='';
   var _repDate='';
   var _hasSigs=false;
@@ -2783,40 +2783,86 @@ var _cn=cname||'Customer';
     +'</div>';
   // ── Client-facing signature modal (embedded in shared proposal) ────────────
   var clientSignModal=[
-    '<div id="csm" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif">',
-    '<div style="background:#fff;border-radius:16px;max-width:520px;width:92%;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">',
-    '<div style="text-align:center;margin-bottom:20px"><div style="font-size:22px;font-weight:800;color:#15803d">ZeroScape Turf</div>',
-    '<div style="font-size:14px;color:#555;margin-top:6px">Please review and sign your proposal</div></div>',
-    '<p style="font-size:13px;color:#374151;margin:0 0 18px 0">By signing below you agree to the terms and conditions outlined in this proposal. Your electronic signature is legally binding.</p>',
-    '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:8px">Your Signature</div>',
-    '<canvas id="csc" width="456" height="160" style="border:2px solid #d1d5db;border-radius:10px;display:block;width:100%;touch-action:none;cursor:crosshair;background:#f9fafb"></canvas>',
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">',
+    // Hidden modal overlay — shown only when a sig-field or init-field is clicked
+    '<div id="csm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;font-family:Arial,sans-serif">',
+    '<div style="background:#fff;border-radius:16px;max-width:480px;width:92%;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">',
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">',
+    '<div id="csm-title" style="font-size:16px;font-weight:800;color:#15803d">Signature</div>',
+    '<button id="csm-x" style="background:none;border:none;font-size:20px;color:#9ca3af;cursor:pointer;padding:0 4px">&times;</button>',
+    '</div>',
+    '<div id="csm-hint" style="font-size:12px;color:#6b7280;margin-bottom:10px">Sign with your finger or stylus below</div>',
+    '<canvas id="csc" style="border:2px solid #d1d5db;border-radius:10px;display:block;width:100%;touch-action:none;cursor:crosshair;background:#f9fafb"></canvas>',
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:16px">',
     '<button id="csc-clr" style="background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer;padding:4px 0">&#10006; Clear</button>',
-    '<div style="font-size:11px;color:#9ca3af">Sign above with finger or stylus</div></div>',
-    '<div style="display:flex;gap:10px;margin-top:20px">',
-    '<button id="csm-later" style="flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Review Later</button>',
-    '<button id="csm-accept" style="flex:2;padding:12px;background:#15803d;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">&#9998; Accept &amp; Sign</button>',
-    '</div></div></div>',
+    '<div style="font-size:11px;color:#d1d5db">|</div>',
+    '<div style="font-size:11px;color:#9ca3af">Draw above</div>',
+    '</div>',
+    '<div style="display:flex;gap:10px">',
+    '<button id="csm-cancel" style="flex:1;padding:11px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>',
+    '<button id="csm-accept" style="flex:2;padding:11px;background:#15803d;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">&#10003; Apply</button>',
+    '</div>',
+    '</div></div>',
+    // Also inject a floating "Sign Document" button at the bottom of the page
+    '<div id="sign-fab" style="position:fixed;bottom:24px;right:24px;z-index:8000;display:flex;flex-direction:column;align-items:flex-end;gap:10px">',
+    '<button onclick="(function(){var f=document.querySelector(\'.sig-field\');if(f)f.click();})()" style="background:#15803d;color:#fff;border:none;border-radius:50px;padding:14px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.3)">&#9998; Sign Document</button>',
+    '</div>',
     '<script>(function(){',
+    // Modal state
     'var ov=document.getElementById("csm");',
     'var cv=document.getElementById("csc");',
-    'var ct=cv.getContext("2d");',
+    'var ctx=cv.getContext("2d");',
+    'var currentTarget=null;',
+    'var isInitials=false;',
+    // Canvas drawing
+    'function resetCanvas(){ctx.clearRect(0,0,cv.width,cv.height);ctx.strokeStyle="#111";ctx.lineWidth=isInitials?2:2.5;ctx.lineCap="round";ctx.lineJoin="round";}',
+    'function getPos(e){var r=cv.getBoundingClientRect();var sx=cv.width/cv.offsetWidth,sy=cv.height/cv.offsetHeight;',
+    '  var cx=(e.clientX!=null?e.clientX:e.touches[0].clientX)-r.left;',
+    '  var cy=(e.clientY!=null?e.clientY:e.touches[0].clientY)-r.top;',
+    '  return{x:cx*sx,y:cy*sy};}',
     'var drawing=false;',
-    'ct.strokeStyle="#111";ct.lineWidth=2.5;ct.lineCap="round";ct.lineJoin="round";',
-    'function pos(e){var r=cv.getBoundingClientRect();var cx=(e.clientX!=null?e.clientX:e.touches[0].clientX)-r.left;var cy=(e.clientY!=null?e.clientY:e.touches[0].clientY)-r.top;return{x:cx*(cv.width/cv.offsetWidth),y:cy*(cv.height/cv.offsetHeight)};}',
-    'cv.addEventListener("pointerdown",function(e){e.preventDefault();drawing=true;ct.beginPath();var p=pos(e);ct.moveTo(p.x,p.y);cv.setPointerCapture(e.pointerId);});',
-    'cv.addEventListener("pointermove",function(e){e.preventDefault();if(!drawing)return;var p=pos(e);ct.lineTo(p.x,p.y);ct.stroke();});',
+    'cv.addEventListener("pointerdown",function(e){e.preventDefault();drawing=true;ctx.beginPath();var p=getPos(e);ctx.moveTo(p.x,p.y);cv.setPointerCapture(e.pointerId);});',
+    'cv.addEventListener("pointermove",function(e){e.preventDefault();if(!drawing)return;var p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();});',
     'cv.addEventListener("pointerup",function(){drawing=false;});',
-    'document.getElementById("csc-clr").onclick=function(){ct.clearRect(0,0,cv.width,cv.height);};',
-    'document.getElementById("csm-later").onclick=function(){ov.style.display="none";};',
+    // Open modal for a given target element
+    'function openFor(el){',
+    '  currentTarget=el;',
+    '  isInitials=el.classList.contains("init-field");',
+    '  cv.width=isInitials?280:440;cv.height=isInitials?110:150;',
+    '  resetCanvas();',
+    '  document.getElementById("csm-title").textContent=isInitials?"Add Initials":"Add Signature";',
+    '  document.getElementById("csm-hint").textContent=isInitials?"Draw your initials below":"Sign your full name below";',
+    '  ov.style.display="flex";',
+    '}',
+    // Wire all init-fields and sig-fields
+    'document.querySelectorAll(".init-field").forEach(function(el){el.addEventListener("click",function(){openFor(el);});});',
+    'document.querySelectorAll(".sig-field[data-label=\'Customer Signature\']").forEach(function(el){el.addEventListener("click",function(){openFor(el);});});',
+    // Close handlers
+    'function closeModal(){ov.style.display="none";currentTarget=null;}',
+    'document.getElementById("csm-x").onclick=closeModal;',
+    'document.getElementById("csm-cancel").onclick=closeModal;',
+    'document.getElementById("csc-clr").onclick=function(){ctx.clearRect(0,0,cv.width,cv.height);};',
+    // Accept handler
     'document.getElementById("csm-accept").onclick=function(){',
     '  var blank=document.createElement("canvas");blank.width=cv.width;blank.height=cv.height;',
-    '  if(cv.toDataURL()===blank.toDataURL()){alert("Please sign before accepting.");return;}',
-    '  var sig=cv.toDataURL("image/png");',
-    '  document.querySelectorAll(".sig-field").forEach(function(el){el.innerHTML=\'<img src="\'+sig+\'" style="max-width:200px;max-height:60px;display:block">\';});',
-    '  ov.style.display="none";',
-    '  var conf=document.createElement("div");conf.style.cssText="position:fixed;bottom:24px;right:24px;background:#15803d;color:#fff;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.3);z-index:9999";',
-    '  conf.textContent="✓ Signed — save as PDF to complete";document.body.appendChild(conf);setTimeout(function(){conf.remove();},4000);',
+    '  if(cv.toDataURL()===blank.toDataURL()){alert("Please draw before applying.");return;}',
+    '  var img=document.createElement("img");',
+    '  img.src=cv.toDataURL("image/png");',
+    '  img.style.cssText=isInitials?"max-height:40px;max-width:100px;display:block":"max-height:60px;max-width:100%;display:block";',
+    '  if(currentTarget){',
+    '    currentTarget.innerHTML="";',
+    '    currentTarget.style.border="none";currentTarget.style.background="transparent";currentTarget.style.padding="4px 0";',
+    '    currentTarget.style.display="block";currentTarget.style.cursor="default";',
+    '    currentTarget.appendChild(img);',
+    '    if(isInitials){var lbl=document.createElement("div");lbl.style.cssText="font-size:8px;color:#9ca3af;margin-top:2px";lbl.textContent="Initialed";currentTarget.appendChild(lbl);}',
+    '  }',
+    '  // If this was the customer sig-field, also fill the date
+    '  if(!isInitials){var dates=document.querySelectorAll(".sig-date");dates.forEach(function(d){if(!d.textContent||d.textContent.trim()===""){d.textContent=new Date().toLocaleDateString();}});}',
+    '  closeModal();',
+    '  // Show confirmation
+    '  var conf=document.createElement("div");',
+    '  conf.style.cssText="position:fixed;bottom:80px;right:24px;background:#15803d;color:#fff;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.3);z-index:9999";',
+    '  conf.textContent=isInitials?"✓ Initialed":"✓ Signed — save as PDF to keep a copy";',
+    '  document.body.appendChild(conf);setTimeout(function(){conf.remove();},3500);',
     '};',
     '})()</sc'+'ript>'
   ].join('');
