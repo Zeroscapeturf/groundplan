@@ -188,9 +188,6 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
     <button class="hb" onclick="openProjects()">&#128193;<span class="hb-txt"> Projects</span></button>
     <button class="hb red" id="delbtn" style="display:none" onclick="deleteSel()">&#128465;</button>
     <button class="hb" onclick="clearAll()" title="Clear">&#10005;</button>
-    <button class="hb" onclick="zoomIn()" style="min-width:34px" title="Zoom In">+</button>
-    <button class="hb" onclick="zoomOut()" style="min-width:34px" title="Zoom Out">-</button>
-    <button class="hb" onclick="zoomFit()" style="font-size:11px" title="Fit">Fit</button>
     <button class="hb" onclick="zoomIn()" title="Zoom In" style="font-size:16px">&#43;</button>
     <button class="hb" onclick="zoomOut()" title="Zoom Out" style="font-size:16px">&#8722;</button>
     <button class="hb" onclick="zoomFit()" title="Fit All" style="font-size:11px">Fit</button>
@@ -2785,34 +2782,44 @@ var _cn=cname||'Customer';
     +(_hasSigs?'<div style="margin-top:40px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:9pt;color:#166534">&#10003; This document contains electronic signatures captured via ZeroScape GroundPlan on '+_today+'.</div>':'<div style="margin-top:40px;padding:12px 16px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:9pt;color:#92400e">&#9888; Signature fields are blank. Use the &ldquo;Sign&rdquo; button in GroundPlan to capture signatures, or sign this printed document in ink.</div>')
     +'</div>';
   // ── Client-facing signature modal (embedded in shared proposal) ────────────
-  var clientSignModal='<div id="csm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif">'
-    +'<div style="background:#fff;border-radius:16px;max-width:520px;width:92%;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">'
-    +'<div style="text-align:center;margin-bottom:20px">'
-    +'<div style="font-size:22px;font-weight:800;color:#15803d">ZeroScape Turf</div>'
-    +'<div style="font-size:14px;color:#555;margin-top:6px">Please review and sign your proposal</div>'
-    +'</div>'
-    +'<p style="font-size:13px;color:#374151;margin:0 0 18px 0">By signing below you agree to the terms and conditions outlined in this proposal. Your electronic signature is legally binding.</p>'
-    +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:8px">Your Signature</div>'
-    +'<canvas id="csc" width="456" height="160" style="border:2px solid #d1d5db;border-radius:10px;display:block;width:100%;touch-action:none;cursor:crosshair;background:#f9fafb"></canvas>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'
-    +'<button onclick="(function(){var cv=document.getElementById('csc');var ct=cv.getContext('2d');ct.clearRect(0,0,cv.width,cv.height);})()" style="background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer;padding:4px 0">&#10006; Clear</button>'
-    +'<div style="font-size:11px;color:#9ca3af">Sign above with finger or stylus</div>'
-    +'</div>'
-    +'<div style="display:flex;gap:10px;margin-top:20px">'
-    +'<button onclick="(function(){document.getElementById('csm').style.display='none';})()" style="flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Review Later</button>'
-    +'<button onclick="(function(){var cv=document.getElementById('csc');var blank=document.createElement('canvas');blank.width=cv.width;blank.height=cv.height;if(cv.toDataURL()===blank.toDataURL()){alert('Please sign before accepting.');return;}var sig=cv.toDataURL('image/png');document.querySelectorAll('.sig-field').forEach(function(el){el.innerHTML='<img src=\''+sig+'\' style=\"max-width:200px;max-height:60px;display:block\">';});document.getElementById('csm').style.display='none';var conf=document.createElement('div');conf.style.cssText='position:fixed;bottom:24px;right:24px;background:#15803d;color:#fff;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.3);z-index:9999';conf.textContent='✓ Signed — save as PDF to complete';document.body.appendChild(conf);setTimeout(function(){conf.remove();},4000);})()" style="flex:2;padding:12px;background:#15803d;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">&#9998; Accept &amp; Sign</button>'
-    +'</div>'
-    +'</div>'
-    +'</div>'
-    +'<script>(function(){'
-    +'var cv=document.getElementById('csc');var ct=cv.getContext('2d');var drawing=false;var lr=cv.getBoundingClientRect();'
-    +'function pos(e){var r=cv.getBoundingClientRect();return{x:(e.clientX||e.touches[0].clientX)-r.left,y:(e.clientY||e.touches[0].clientY)-r.top};}'
-    +'ct.strokeStyle='#111';ct.lineWidth=2.5;ct.lineCap='round';ct.lineJoin='round';'
-    +'cv.addEventListener('pointerdown',function(e){e.preventDefault();drawing=true;ct.beginPath();var p=pos(e);ct.moveTo(p.x*(cv.width/cv.offsetWidth),p.y*(cv.height/cv.offsetHeight));cv.setPointerCapture(e.pointerId);});'
-    +'cv.addEventListener('pointermove',function(e){e.preventDefault();if(!drawing)return;var p=pos(e);ct.lineTo(p.x*(cv.width/cv.offsetWidth),p.y*(cv.height/cv.offsetHeight));ct.stroke();});'
-    +'cv.addEventListener('pointerup',function(){drawing=false;});'
-    +'document.getElementById('csm').style.display='flex';'
-    +'})()</script>';
+  var clientSignModal=[
+    '<div id="csm" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif">',
+    '<div style="background:#fff;border-radius:16px;max-width:520px;width:92%;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">',
+    '<div style="text-align:center;margin-bottom:20px"><div style="font-size:22px;font-weight:800;color:#15803d">ZeroScape Turf</div>',
+    '<div style="font-size:14px;color:#555;margin-top:6px">Please review and sign your proposal</div></div>',
+    '<p style="font-size:13px;color:#374151;margin:0 0 18px 0">By signing below you agree to the terms and conditions outlined in this proposal. Your electronic signature is legally binding.</p>',
+    '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:8px">Your Signature</div>',
+    '<canvas id="csc" width="456" height="160" style="border:2px solid #d1d5db;border-radius:10px;display:block;width:100%;touch-action:none;cursor:crosshair;background:#f9fafb"></canvas>',
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">',
+    '<button id="csc-clr" style="background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer;padding:4px 0">&#10006; Clear</button>',
+    '<div style="font-size:11px;color:#9ca3af">Sign above with finger or stylus</div></div>',
+    '<div style="display:flex;gap:10px;margin-top:20px">',
+    '<button id="csm-later" style="flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer">Review Later</button>',
+    '<button id="csm-accept" style="flex:2;padding:12px;background:#15803d;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">&#9998; Accept &amp; Sign</button>',
+    '</div></div></div>',
+    '<script>(function(){',
+    'var ov=document.getElementById("csm");',
+    'var cv=document.getElementById("csc");',
+    'var ct=cv.getContext("2d");',
+    'var drawing=false;',
+    'ct.strokeStyle="#111";ct.lineWidth=2.5;ct.lineCap="round";ct.lineJoin="round";',
+    'function pos(e){var r=cv.getBoundingClientRect();var cx=(e.clientX!=null?e.clientX:e.touches[0].clientX)-r.left;var cy=(e.clientY!=null?e.clientY:e.touches[0].clientY)-r.top;return{x:cx*(cv.width/cv.offsetWidth),y:cy*(cv.height/cv.offsetHeight)};}',
+    'cv.addEventListener("pointerdown",function(e){e.preventDefault();drawing=true;ct.beginPath();var p=pos(e);ct.moveTo(p.x,p.y);cv.setPointerCapture(e.pointerId);});',
+    'cv.addEventListener("pointermove",function(e){e.preventDefault();if(!drawing)return;var p=pos(e);ct.lineTo(p.x,p.y);ct.stroke();});',
+    'cv.addEventListener("pointerup",function(){drawing=false;});',
+    'document.getElementById("csc-clr").onclick=function(){ct.clearRect(0,0,cv.width,cv.height);};',
+    'document.getElementById("csm-later").onclick=function(){ov.style.display="none";};',
+    'document.getElementById("csm-accept").onclick=function(){',
+    '  var blank=document.createElement("canvas");blank.width=cv.width;blank.height=cv.height;',
+    '  if(cv.toDataURL()===blank.toDataURL()){alert("Please sign before accepting.");return;}',
+    '  var sig=cv.toDataURL("image/png");',
+    '  document.querySelectorAll(".sig-field").forEach(function(el){el.innerHTML=\'<img src="\'+sig+\'" style="max-width:200px;max-height:60px;display:block">\';});',
+    '  ov.style.display="none";',
+    '  var conf=document.createElement("div");conf.style.cssText="position:fixed;bottom:24px;right:24px;background:#15803d;color:#fff;border-radius:12px;padding:14px 20px;font-size:14px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.3);z-index:9999";',
+    '  conf.textContent="✓ Signed — save as PDF to complete";document.body.appendChild(conf);setTimeout(function(){conf.remove();},4000);',
+    '};',
+    '})()</sc'+'ript>'
+  ].join('');
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(cname?cname+' - ':'')+'ZeroScape Site Plan</title>'
   +'<style>'+css+'@media print{body{padding-top:0!important}}</style>'
   +'</head><body>'+coverHtml+drawHtml+contractHtml+sigHtml+clientSignModal+'</body></html>';
