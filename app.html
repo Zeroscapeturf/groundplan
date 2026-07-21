@@ -2099,16 +2099,16 @@ function mountBg(imgs,fname){
     document.getElementById('bg-op').value=Math.round(S.bg.op*100);document.getElementById('bg-opv').textContent=Math.round(S.bg.op*100)+'%';
     document.getElementById('bg-sz').value=100;document.getElementById('bg-szv').textContent='100%';
     document.getElementById('bg-ang').value=0;document.getElementById('bg-angv').textContent='0\u00B0';
-    render();toast('Photo loaded \u2713  Unlock to reposition, use sliders to adjust');
+    markDirty();render();toast('Photo loaded \u2713  Unlock to reposition, use sliders to adjust');
   }
   if(first.complete&&first.naturalWidth)setup();else first.onload=setup;
 }
-function setBgOp(v){S.bg.op=v/100;document.getElementById('bg-opv').textContent=v+'%';render();}
-function setBgSize(v){var f=v/100;var cx=S.bg.x+S.bg.w/2,cy=S.bg.y+S.bg.h/2;S.bg.w=S.bg._baseW*f;S.bg.h=S.bg._baseH*f;S.bg.x=cx-S.bg.w/2;S.bg.y=cy-S.bg.h/2;document.getElementById('bg-szv').textContent=v+'%';render();}
-function setBgAngle(v){S.bg.angle=parseFloat(v);document.getElementById('bg-angv').textContent=v+'\u00B0';render();}
+function setBgOp(v){S.bg.op=v/100;document.getElementById('bg-opv').textContent=v+'%';markDirty();render();}
+function setBgSize(v){var f=v/100;var cx=S.bg.x+S.bg.w/2,cy=S.bg.y+S.bg.h/2;S.bg.w=S.bg._baseW*f;S.bg.h=S.bg._baseH*f;S.bg.x=cx-S.bg.w/2;S.bg.y=cy-S.bg.h/2;document.getElementById('bg-szv').textContent=v+'%';markDirty();render();}
+function setBgAngle(v){S.bg.angle=parseFloat(v);document.getElementById('bg-angv').textContent=v+'\u00B0';markDirty();render();}
 function toggleBgLock(){S.bg.locked=!S.bg.locked;var btn=document.getElementById('bg-lock');btn.classList.toggle('on',!S.bg.locked);btn.textContent=S.bg.locked?'\uD83D\uDD12 Lock':'\uD83D\uDD13 Unlock';toast(S.bg.locked?'Background locked':'Unlocked \u2014 drag to reposition');}
-function fitBg(){var visW=cv.width/S.scale,visH=cv.height/S.scale;S.bg.x=(-S.pan.x/S.scale)+(visW-S.bg.w)/2;S.bg.y=(-S.pan.y/S.scale)+(visH-S.bg.h)/2;render();toast('Background centered');}
-function removeBg(){S.bg.imgs.forEach(function(img){if(img._blobUrl)URL.revokeObjectURL(img._blobUrl);});S.bg.imgs=[];S.bg.angle=0;document.getElementById('bg-bar').style.display='none';render();}
+function fitBg(){var visW=cv.width/S.scale,visH=cv.height/S.scale;S.bg.x=(-S.pan.x/S.scale)+(visW-S.bg.w)/2;S.bg.y=(-S.pan.y/S.scale)+(visH-S.bg.h)/2;markDirty();render();toast('Background centered');}
+function removeBg(){S.bg.imgs.forEach(function(img){if(img._blobUrl)URL.revokeObjectURL(img._blobUrl);});S.bg.imgs=[];S.bg.angle=0;document.getElementById('bg-bar').style.display='none';markDirty();render();}
 
 // ── Paver rotation ───────────────────────────────────────────────────────────
 function rotatePaver(deg){
