@@ -359,6 +359,13 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
             </div>
           </div>
           <input type="file" id="cover-photo-input" accept="image/*" style="display:none" onchange="(function(f){if(!f)return;var r=new FileReader();r.onload=function(e){S.coverPhoto=e.target.result;var p=document.getElementById('cover-photo-preview');p.style.backgroundImage='url('+e.target.result+')';p.style.backgroundSize='cover';p.style.backgroundPosition='center';document.getElementById('cover-photo-icon').style.display='none';toast('Cover photo set ✓');};r.readAsDataURL(f);})(this.files[0])">
+          <div style="color:#6b7280;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">Proposal Photos &amp; Notes</div>
+          <div id="extras-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+          <div style="display:flex;gap:6px">
+            <label for="extra-photo-input" style="flex:1;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:600;cursor:pointer;text-align:center;display:block">&#128247; Add Photo</label>
+            <button onclick="addProposalText()" style="flex:1;background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.25);color:#fde68a;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:600;cursor:pointer">&#9998; Add Text</button>
+          </div>
+          <input type="file" id="extra-photo-input" accept="image/*" style="display:none" onchange="addProposalPhoto(this)">
           <div style="color:#6b7280;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">Project</div>
           <div id="sum-pname-row" style="display:flex;align-items:center;gap:8px">
             <input type="text" id="sum-pname" placeholder="Project name..." style="flex:1;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none">
@@ -459,7 +466,7 @@ var SCOLS=['#111827','#374151','#6b7280','#ffffff','#22c55e','#3b82f6','#ef4444'
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var S={
-  tool:'pen',mat:'turf',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',coverPhoto:null,
+  tool:'pen',mat:'turf',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',coverPhoto:null,proposalExtras:[],
   ppf:40,objs:[],sel:null,hist:[],
   pan:{x:80,y:100},scale:1,vel:{x:0,y:0},rafPan:null,
   drawing:false,penDown:false,pinching:false,touchPtrs:new Map(),lastPos:null,phase:'idle',penSize:6,penSmooth:true,lineStyle:'solid',strokeWidth:2,polyPts2:[],
@@ -504,9 +511,9 @@ function expandPts(o){
 }
 // Collect all outline segments from every object (for enclosed region detection)
 function allBoundarySegs(){
-  function extSeg(a,b){// extend both ends by 3 canvas units to bridge endpoint gaps
+  function extSeg(a,b){
     var ex=b.x-a.x,ey=b.y-a.y,el=Math.hypot(ex,ey);
-    if(el<0.01)return[a,b];var f=3/el;
+    if(el<0.01)return[a,b];var f=18/el;
     return[{x:a.x-ex*f,y:a.y-ey*f},{x:b.x+ex*f,y:b.y+ey*f}];
   }
   var segs=[];
@@ -534,27 +541,31 @@ function raySegT(ox,oy,dx,dy,ax,ay,bx,by){
   return(t>=0&&u>=0&&u<=1)?t:-1;
 }
 // Order boundary objects into a connected closed path; returns [{obj,reverse}] or null
+function objEndPts(o){
+  if(o.type==='rect'){var b=bbox(o);var rp=[{x:b.x0,y:b.y0},{x:b.x1,y:b.y0},{x:b.x1,y:b.y1},{x:b.x0,y:b.y1}];return{pts:rp,start:rp[0],end:rp[3]};}
+  if(o.type==='ellipse'){var ep=[];for(var ei=0;ei<32;ei++){var ea=ei/32*Math.PI*2;ep.push({x:o.center.x+o.rx*Math.cos(ea),y:o.center.y+o.ry*Math.sin(ea)});}return{pts:ep,start:ep[0],end:ep[ep.length-1]};}
+  var pts=expandPts(o);if(!pts||pts.length<2)return null;
+  return{pts:pts,start:pts[0],end:pts[pts.length-1]};
+}
 function orderBoundaryObjs(objs){
   if(!objs||objs.length===0)return null;
-  var snapR=30/S.scale;
+  var snapR=40;
   var remaining=objs.slice(),ordered=[];
   var cur=remaining.shift();
-  if(!cur.pts||cur.pts.length<2)return null;
-  ordered.push({obj:cur,reverse:false});
-  var curEnd=cur.pts[cur.pts.length-1];
+  var curEP=objEndPts(cur);if(!curEP)return null;
+  ordered.push({obj:cur,reverse:false,pts:curEP.pts});
+  var curEnd=curEP.end;
   for(var iter=0;iter<=objs.length+1;iter++){
     if(remaining.length===0)break;
     var found=false;
     for(var ri=0;ri<remaining.length;ri++){
-      var cand=remaining[ri];if(!cand.pts||cand.pts.length<2)continue;
-      var s=cand.pts[0],e=cand.pts[cand.pts.length-1];
-      if(d2(curEnd,s)<snapR){ordered.push({obj:cand,reverse:false});curEnd=e;remaining.splice(ri,1);found=true;break;}
-      else if(d2(curEnd,e)<snapR){ordered.push({obj:cand,reverse:true});curEnd=s;remaining.splice(ri,1);found=true;break;}
+      var cand=remaining[ri];var ep=objEndPts(cand);if(!ep)continue;
+      if(d2(curEnd,ep.start)<snapR){ordered.push({obj:cand,reverse:false,pts:ep.pts});curEnd=ep.end;remaining.splice(ri,1);found=true;break;}
+      else if(d2(curEnd,ep.end)<snapR){ordered.push({obj:cand,reverse:true,pts:ep.pts});curEnd=ep.start;remaining.splice(ri,1);found=true;break;}
     }
     if(!found)return null;
   }
-  // Verify loop closes back to start
-  var firstPt=ordered[0].reverse?ordered[0].obj.pts[ordered[0].obj.pts.length-1]:ordered[0].obj.pts[0];
+  var firstPt=ordered[0].reverse?ordered[0].pts[ordered[0].pts.length-1]:ordered[0].pts[0];
   if(d2(curEnd,firstPt)>snapR)return null;
   return ordered;
 }
@@ -598,23 +609,22 @@ function buildRegionFillPts(pt){
     var poly2=[];
     for(var bi=0;bi<ordered.length;bi++){
       var item=ordered[bi];
-      var epts2=expandPts(item.obj);
+      var epts2=item.pts.slice();
       if(item.reverse)epts2=epts2.slice().reverse();
-      // Add all points except last to avoid duplicate at join
       for(var pi=0;pi<epts2.length-1;pi++)poly2.push(epts2[pi]);
     }
     return poly2.length>=3?poly2:null;
   }
   // Fallback: classic ray-cast polygon
-  return null;
+  return enclosedRegionPoly(pt);
 }
 // Shoot rays from pt in all directions; returns approx polygon or null if not enclosed
 function enclosedRegionPoly(pt){
-  var segs=allBoundarySegs(),N=90,maxR=8000,poly=[],missed=0,maxMiss=8;
+  var segs=allBoundarySegs(),N=120,maxR=8000,poly=[],missed=0,maxMiss=18;
   for(var i=0;i<N;i++){
     var ang=i/N*Math.PI*2,dx=Math.cos(ang),dy=Math.sin(ang),minT=maxR;
     for(var j=0;j<segs.length;j++){var t=raySegT(pt.x,pt.y,dx,dy,segs[j][0].x,segs[j][0].y,segs[j][1].x,segs[j][1].y);if(t>0.1&&t<minT)minT=t;}
-    if(minT>=maxR){missed++;if(missed>maxMiss)return null;/* interpolate later */poly.push(null);}
+    if(minT>=maxR){missed++;if(missed>maxMiss)return null;poly.push(null);}
     else poly.push({x:pt.x+dx*minT,y:pt.y+dy*minT});
   }
   // Fill any missed ray slots by averaging neighbors
@@ -1433,14 +1443,6 @@ function onPD(e){
     if(hit){
       setSel(hit.id);pushUndo();S.drawing=true;S.phase='dragging';S.moveId=hit.id;
       var cn2=centroid(hit);S.moveOffs=[{dx:cn2.x-wp.x,dy:cn2.y-wp.y}];
-    }else if(S.lastDrawTool){
-      // Tap on empty canvas — restart drawing with same tool
-      var ldt=S.lastDrawTool;
-      setSel(null);setTool(ldt);
-      if(ldt==='line'){S.startPt=wp;S.drawing=true;S.phase='drawing';}
-      else if(ldt==='curbing'){S.chain=[wp];S.chainType='curbing';S.drawing=true;S.phase='drawing';updChain();}
-      else if(ldt==='arc'){S.arcCenter=wp;S.arcPhase=1;S.drawing=true;S.phase='drawing';}
-      else if(ldt==='tap'){S.chain=[wp];S.chainType='tap';S.drawing=true;S.phase='drawing';updChain();}
     }else{setSel(null);}
     return;
   }
@@ -2496,6 +2498,45 @@ function loadProject(evt){
   reader.readAsText(file);evt.target.value='';
 }
 
+// ── Proposal extras ───────────────────────────────────────────────────────────
+function addProposalPhoto(inp){
+  var f=inp.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    S.proposalExtras.push({type:'photo',src:e.target.result,caption:''});
+    renderExtrasList();toast('Photo added to proposal ✓');
+  };
+  r.readAsDataURL(f);inp.value='';
+}
+function addProposalText(){
+  var txt=prompt('Enter note or description for proposal:');
+  if(!txt)return;
+  S.proposalExtras.push({type:'text',content:txt});
+  renderExtrasList();toast('Note added to proposal ✓');
+}
+function removeProposalExtra(i){
+  S.proposalExtras.splice(i,1);renderExtrasList();
+}
+function renderExtrasList(){
+  var el=document.getElementById('extras-list');if(!el)return;
+  el.innerHTML='';
+  S.proposalExtras.forEach(function(ex,i){
+    var card=document.createElement('div');
+    card.style.cssText='display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 8px';
+    if(ex.type==='photo'){
+      var img=document.createElement('img');img.src=ex.src;img.style.cssText='width:44px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0';
+      var lbl=document.createElement('span');lbl.style.cssText='flex:1;color:#93c5fd;font-size:10px';lbl.textContent='Photo '+(i+1);
+      card.appendChild(img);card.appendChild(lbl);
+    }else{
+      var lbl2=document.createElement('span');lbl2.style.cssText='flex:1;color:#fde68a;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';lbl2.textContent=ex.content;
+      card.appendChild(lbl2);
+    }
+    var btn=document.createElement('button');btn.textContent='✕';btn.style.cssText='background:none;border:none;color:#f87171;cursor:pointer;font-size:13px;padding:0 2px';
+    btn.onclick=function(){removeProposalExtra(i);};
+    card.appendChild(btn);el.appendChild(card);
+  });
+}
+
 // ── PDF Export ────────────────────────────────────────────────────────────────
 function exportPDF(){
   var pname=document.getElementById('sum-pname').value||'Site Plan';
@@ -2798,9 +2839,22 @@ var _cn=cname||'Customer';
     +(_hasSigs?'<div style="margin-top:40px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:9pt;color:#166534">&#10003; This document contains electronic signatures captured via ZeroScape GroundPlan on '+_today+'.</div>':'<div style="margin-top:40px;padding:12px 16px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:9pt;color:#92400e">&#9888; Signature fields are blank. Use the &ldquo;Sign&rdquo; button in GroundPlan to capture signatures, or sign this printed document in ink.</div>')
     +'</div>';
   var clientSignModal='';
+  var extrasHtml='';
+  if(S.proposalExtras&&S.proposalExtras.length>0){
+    extrasHtml='<div class="page"><div class="phdr"><img class="phdr-logo" src="'+logoSrc+'" alt="ZeroScape Turf"><div class="phdr-right"><div class="phdr-title">Project Photos &amp; Notes</div><div class="phdr-sub">'+(caddr?caddr+' &bull; ':'')+now+'</div></div></div>'
+    +'<div style="padding:16px 0;display:flex;flex-wrap:wrap;gap:18px">';
+    S.proposalExtras.forEach(function(ex){
+      if(ex.type==='photo'){
+        extrasHtml+='<div style="flex:1 1 240px;max-width:340px"><img src="'+ex.src+'" style="width:100%;border-radius:8px;display:block;border:1px solid #e5e7eb">'+(ex.caption?'<div style="font-size:9pt;color:#6b7280;margin-top:4px">'+ex.caption+'</div>':'')+'</div>';
+      }else{
+        extrasHtml+='<div style="flex:1 1 100%;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;font-size:10pt;color:#1f2937;line-height:1.6">'+ex.content.replace(/\n/g,'<br>')+'</div>';
+      }
+    });
+    extrasHtml+='</div></div>';
+  }
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(cname?cname+' - ':'')+'ZeroScape Site Plan</title>'
   +'<style>'+css+'@media print{body{padding-top:0!important}}</style>'
-  +'</head><body>'+coverHtml+drawHtml+contractHtml+sigHtml+clientSignModal+'</body></html>';
+  +'</head><body>'+coverHtml+drawHtml+extrasHtml+contractHtml+sigHtml+clientSignModal+'</body></html>';
   // Store for sharing, then show in-app iframe
   window._lastExportHtml=html;
   window._lastExportName=(cname||'Proposal').replace(/[^a-z0-9]/gi,'_');
