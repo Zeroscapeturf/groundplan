@@ -697,6 +697,7 @@ function bbox(o){
     if(pts[i].x<x0)x0=pts[i].x;if(pts[i].x>x1)x1=pts[i].x;
     if(pts[i].y<y0)y0=pts[i].y;if(pts[i].y>y1)y1=pts[i].y;
   }
+  if(o.controls){for(var ci=0;ci<o.controls.length;ci++){var cc=o.controls[ci];if(cc){if(cc.cx<x0)x0=cc.cx;if(cc.cx>x1)x1=cc.cx;if(cc.cy<y0)y0=cc.cy;if(cc.cy>y1)y1=cc.cy;}}}
   return{x0:x0,x1:x1,y0:y0,y1:y1};
 }
 function snapPt(wp){
@@ -1265,15 +1266,14 @@ function render(){
         ctx.beginPath();ctx.arc(vpts[vi].x,vpts[vi].y,hr,0,Math.PI*2);ctx.fillStyle='#f97316';ctx.fill();
         ctx.strokeStyle='#fff';ctx.lineWidth=1.5/S.scale;ctx.stroke();
       }
-      // Orange mid-segment curve handles for lineshape/curbchain
+      // Orange mid-segment handles — only show where segment is already curved
       if(so.type==='lineshape'||so.type==='curbchain'){
         var _lp=so.pts||[],_ns=_lp.length-(so.closed?0:1);
         for(var _chi=0;_chi<_ns;_chi++){
-          var _chA=_lp[_chi],_chB=_chi<_lp.length-1?_lp[_chi+1]:_lp[0];
           var _chc=so.controls&&so.controls[_chi];
-          var _chx=_chc?_chc.cx:(_chA.x+_chB.x)/2,_chy=_chc?_chc.cy:(_chA.y+_chB.y)/2;
-          ctx.beginPath();ctx.arc(_chx,_chy,hr*0.75,0,Math.PI*2);
-          ctx.fillStyle=_chc?'#f97316':'rgba(249,115,22,0.45)';ctx.fill();
+          if(!_chc)continue;
+          ctx.beginPath();ctx.arc(_chc.cx,_chc.cy,hr*0.75,0,Math.PI*2);
+          ctx.fillStyle='#f97316';ctx.fill();
           ctx.strokeStyle='#fff';ctx.lineWidth=1/S.scale;ctx.stroke();
         }
       }
