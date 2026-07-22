@@ -366,6 +366,12 @@ body{background:#111827;font-family:system-ui,-apple-system,sans-serif;overflow:
             <button onclick="addProposalText()" style="flex:1;background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.25);color:#fde68a;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:600;cursor:pointer">&#9998; Add Text</button>
           </div>
           <input type="file" id="extra-photo-input" accept="image/*" style="display:none" onchange="addProposalPhoto(this)">
+          <div style="color:#6b7280;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">Info Page Photo</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <label for="info-photo-input" style="flex:1;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#4ade80;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:600;cursor:pointer;text-align:center;display:block">Set Info Page Photo</label>
+            <button onclick="S.infoPagePhoto=null;toast('Info photo removed')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 8px;font-size:11px;cursor:pointer">Remove</button>
+          </div>
+          <input type="file" id="info-photo-input" accept="image/*" style="display:none" onchange="(function(f){if(!f)return;var r=new FileReader();r.onload=function(e){S.infoPagePhoto=e.target.result;toast('Info photo set ✓');};r.readAsDataURL(f);})(this.files[0])">
           <div style="color:#6b7280;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">Project</div>
           <div id="sum-pname-row" style="display:flex;align-items:center;gap:8px">
             <input type="text" id="sum-pname" placeholder="Project name..." style="flex:1;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f9fafb;padding:8px 11px;font-size:14px;outline:none">
@@ -465,7 +471,7 @@ var SCOLS=['#111827','#374151','#6b7280','#ffffff','#22c55e','#3b82f6','#ef4444'
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var S={
-  tool:'pen',mat:'turf',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',coverPhoto:null,proposalExtras:[],
+  tool:'pen',mat:'turf',stamp:'palm',col:'#111827',labelText:'Note',paverRot:0,customFillColor:'#6366f1',coverPhoto:null,infoPagePhoto:null,proposalExtras:[],
   ppf:40,objs:[],sel:null,hist:[],
   pan:{x:80,y:100},scale:1,vel:{x:0,y:0},rafPan:null,
   drawing:false,penDown:false,pinching:false,touchPtrs:new Map(),lastPos:null,phase:'idle',penSize:6,penSmooth:true,lineStyle:'solid',strokeWidth:2,polyPts2:[],
@@ -2840,56 +2846,32 @@ var _cn=cname||'Customer';
     extrasHtml+='</div></div>';
   }
   // ── Info page 1: Why Synthetic Turf ──────────────────────────────────────────
-  var turfSvg='<svg viewBox="0 0 800 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px">'
-  +'<defs><linearGradient id="soil" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5c3d1e"/><stop offset="100%" stop-color="#3b2008"/></linearGradient>'
-  +'<linearGradient id="b1" x1="0" y1="0" x2="0.15" y2="1"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#15803d"/></linearGradient>'
-  +'<linearGradient id="b2" x1="0" y1="0" x2="0.1" y2="1"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#166534"/></linearGradient>'
-  +'<linearGradient id="b3" x1="0.1" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bbf7d0"/><stop offset="100%" stop-color="#15803d"/></linearGradient>'
-  +'<linearGradient id="b4" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0%" stop-color="#6ee7b7"/><stop offset="100%" stop-color="#14532d"/></linearGradient>'
-  +'</defs>'
-  +'<rect width="800" height="260" fill="url(#soil)"/>'
-  +'<rect y="220" width="800" height="40" fill="#3b2008"/>';
-  // Generate many turf blades via JS
-  var _blades=[];
-  for(var _bi=0;_bi<120;_bi++){
-    var _bx=(_bi*6.8+2)%800;
-    var _bh=60+(_bi*17%55);
-    var _bw=3.5+(_bi*7%3);
-    var _bcx=_bx+(_bi%3===0?-8:_bi%3===1?6:-4);
-    var _by=220-_bh;
-    var _grad=['b1','b2','b3','b4'][_bi%4];
-    turfSvg+='<path d="M'+_bx+' 220 Q'+_bcx+' '+(_by+_bh*0.5)+' '+(_bx+(_bi%2?2:-2))+' '+_by+'" stroke="url(#'+_grad+')" stroke-width="'+_bw+'" fill="none" stroke-linecap="round"/>';
-  }
-  // Infill pebbles
-  for(var _pi=0;_pi<80;_pi++){
-    var _px=(_pi*10.3+5)%800;var _py=212+(_pi%4)*3;
-    turfSvg+='<ellipse cx="'+_px+'" cy="'+_py+'" rx="'+(2+_pi%2)+'" ry="1.2" fill="#c4a882" opacity="0.7"/>';
-  }
-  turfSvg+='<rect y="0" width="800" height="260" fill="url(#soilTop)" opacity="0"/>';
-  turfSvg+='</svg>';
+  var infoPhotoHtml=S.infoPagePhoto
+    ?'<div style="margin:0 0 18px;border-radius:10px;overflow:hidden;height:240px"><img src="'+S.infoPagePhoto+'" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"></div>'
+    :'<div style="margin:0 0 18px;background:linear-gradient(135deg,#0f2d18 0%,#1a3a24 50%,#111827 100%);border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;border:1px solid #1f4d2a"><div style="text-align:center"><div style="color:#4ade80;font-size:16pt;font-weight:900;letter-spacing:3px">ZEROSCAPE TURF</div><div style="color:#6b7280;font-size:9pt;margin-top:4px;letter-spacing:1px">SYNTHETIC TURF · UTAH</div></div></div>';
 
   var infoPage1='<div class="page"><div class="phdr"><img class="phdr-logo" src="'+logoSrc+'" alt="ZeroScape Turf"><div class="phdr-right"><div class="phdr-title">Why Synthetic Turf?</div><div class="phdr-sub">The Smart Investment for Your Outdoor Space</div></div></div>'
-  +'<div style="margin:0 0 18px">'+turfSvg+'</div>'
+  +infoPhotoHtml
   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">'
   +'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px">'
-  +'<div style="font-size:11pt;font-weight:800;color:#14532d;margin-bottom:6px">&#128167; Save Up to 70% on Water</div>'
+  +'<div style="font-size:11pt;font-weight:800;color:#14532d;margin-bottom:6px">Save Up to 70% on Water</div>'
   +'<div style="font-size:9pt;color:#374151;line-height:1.6">A natural grass lawn requires 44–55 gallons of water per square foot each year. Synthetic turf eliminates irrigation entirely, saving the average homeowner <strong>55,000+ gallons annually</strong> — and hundreds of dollars on water bills.</div>'
   +'</div>'
-  +'<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px">'
-  +'<div style="font-size:11pt;font-weight:800;color:#92400e;margin-bottom:6px">&#128181; Lower Long-Term Cost</div>'
-  +'<div style="font-size:9pt;color:#374151;line-height:1.6">No mowing, fertilizing, reseeding, or pest control. When you factor in equipment, labor, water, and chemicals, synthetic turf pays for itself within <strong>3–5 years</strong> and continues saving money for decades.</div>'
+  +'<div style="background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px 16px">'
+  +'<div style="font-size:11pt;font-weight:800;color:#4ade80;margin-bottom:6px">Lower Long-Term Cost</div>'
+  +'<div style="font-size:9pt;color:#d1fae5;line-height:1.6">No mowing, fertilizing, reseeding, or pest control. When you factor in equipment, labor, water, and chemicals, synthetic turf pays for itself within <strong>3–5 years</strong> and continues saving money for decades.</div>'
   +'</div>'
-  +'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px">'
-  +'<div style="font-size:11pt;font-weight:800;color:#1e40af;margin-bottom:6px">&#9200; Zero Maintenance</div>'
-  +'<div style="font-size:9pt;color:#374151;line-height:1.6">Reclaim your weekends. Our synthetic turf stays green and lush year-round with virtually no upkeep — no mowing, no watering, no seasonal re-sodding. A quick rinse is all it needs.</div>'
+  +'<div style="background:#1f2937;border:1px solid #374151;border-radius:10px;padding:14px 16px">'
+  +'<div style="font-size:11pt;font-weight:800;color:#4ade80;margin-bottom:6px">Zero Maintenance</div>'
+  +'<div style="font-size:9pt;color:#d1fae5;line-height:1.6">Reclaim your weekends. Our synthetic turf stays green and lush year-round with virtually no upkeep — no mowing, no watering, no seasonal re-sodding. A quick rinse is all it needs.</div>'
   +'</div>'
-  +'<div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:10px;padding:14px 16px">'
-  +'<div style="font-size:11pt;font-weight:800;color:#6b21a8;margin-bottom:6px">&#127807; Always Perfect, Always Green</div>'
+  +'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px">'
+  +'<div style="font-size:11pt;font-weight:800;color:#14532d;margin-bottom:6px">Always Perfect, Always Green</div>'
   +'<div style="font-size:9pt;color:#374151;line-height:1.6">UV-stabilized fibers resist fading, standing up to intense desert heat and heavy foot traffic. Your lawn looks immaculate every single day — no brown patches, no bare spots, no mud.</div>'
   +'</div>'
   +'</div>'
   +'<div style="display:flex;gap:10px;background:#1f2937;border-radius:10px;padding:14px 20px;align-items:center">'
-  +'<div style="flex:1;text-align:center"><div style="font-size:20pt;font-weight:900;color:#4ade80">25yr</div><div style="font-size:8pt;color:#9ca3af;margin-top:2px">Warranty Available</div></div>'
+  +'<div style="flex:1;text-align:center"><div style="font-size:20pt;font-weight:900;color:#4ade80">16yr</div><div style="font-size:8pt;color:#9ca3af;margin-top:2px">Warranty Available</div></div>'
   +'<div style="width:1px;background:#374151;align-self:stretch"></div>'
   +'<div style="flex:1;text-align:center"><div style="font-size:20pt;font-weight:900;color:#4ade80">70%</div><div style="font-size:8pt;color:#9ca3af;margin-top:2px">Water Reduction</div></div>'
   +'<div style="width:1px;background:#374151;align-self:stretch"></div>'
@@ -2902,20 +2884,20 @@ var _cn=cname||'Customer';
   // ── Info page 2: Our Quality & Process ───────────────────────────────────────
   var infoPage2='<div class="page"><div class="phdr"><img class="phdr-logo" src="'+logoSrc+'" alt="ZeroScape Turf"><div class="phdr-right"><div class="phdr-title">Our Quality &amp; Process</div><div class="phdr-sub">Premium Materials · Expert Installation · Lasting Results</div></div></div>'
   +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px">'
-  +'<div style="text-align:center;padding:16px 10px;border:1px solid #e5e7eb;border-radius:10px">'
-  +'<div style="font-size:28pt;margin-bottom:6px">&#128269;</div>'
-  +'<div style="font-weight:800;color:#1f2937;font-size:10pt;margin-bottom:4px">Free Consultation</div>'
-  +'<div style="font-size:8.5pt;color:#6b7280;line-height:1.5">We visit your property, measure precisely, and design a custom plan — at no cost to you.</div>'
+  +'<div style="text-align:center;padding:16px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px">'
+  +'<div style="width:40px;height:40px;border-radius:50%;background:#14532d;color:#fff;font-size:16pt;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">1</div>'
+  +'<div style="font-weight:800;color:#14532d;font-size:10pt;margin-bottom:4px">Free Consultation</div>'
+  +'<div style="font-size:8.5pt;color:#374151;line-height:1.5">We visit your property, measure precisely, and design a custom plan — at no cost to you.</div>'
   +'</div>'
-  +'<div style="text-align:center;padding:16px 10px;border:1px solid #e5e7eb;border-radius:10px">'
-  +'<div style="font-size:28pt;margin-bottom:6px">&#9881;</div>'
-  +'<div style="font-weight:800;color:#1f2937;font-size:10pt;margin-bottom:4px">Expert Installation</div>'
-  +'<div style="font-size:8.5pt;color:#6b7280;line-height:1.5">Our certified crews handle site prep, base compaction, turf laying, and concrete curbing for a flawless finish.</div>'
+  +'<div style="text-align:center;padding:16px 10px;background:#1f2937;border:1px solid #374151;border-radius:10px">'
+  +'<div style="width:40px;height:40px;border-radius:50%;background:#22c55e;color:#fff;font-size:16pt;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">2</div>'
+  +'<div style="font-weight:800;color:#4ade80;font-size:10pt;margin-bottom:4px">Expert Installation</div>'
+  +'<div style="font-size:8.5pt;color:#d1fae5;line-height:1.5">Our certified crews handle site prep, base compaction, turf laying, and concrete curbing for a flawless finish.</div>'
   +'</div>'
-  +'<div style="text-align:center;padding:16px 10px;border:1px solid #e5e7eb;border-radius:10px">'
-  +'<div style="font-size:28pt;margin-bottom:6px">&#127942;</div>'
-  +'<div style="font-weight:800;color:#1f2937;font-size:10pt;margin-bottom:4px">Warranted for Life</div>'
-  +'<div style="font-size:8.5pt;color:#6b7280;line-height:1.5">Premium turf backed by up to a 25-year manufacturer warranty. We stand behind every project we install.</div>'
+  +'<div style="text-align:center;padding:16px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px">'
+  +'<div style="width:40px;height:40px;border-radius:50%;background:#14532d;color:#fff;font-size:16pt;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">3</div>'
+  +'<div style="font-weight:800;color:#14532d;font-size:10pt;margin-bottom:4px">16-Year Warranty</div>'
+  +'<div style="font-size:8.5pt;color:#374151;line-height:1.5">Premium turf backed by a 16-year manufacturer warranty. We stand behind every project we install.</div>'
   +'</div>'
   +'</div>'
   +'<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:16px">'
