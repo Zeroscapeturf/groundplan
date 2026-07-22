@@ -1262,8 +1262,20 @@ function render(){
         if(so.closed)ctx.closePath();ctx.stroke();ctx.restore();
       }
       for(var vi=0;vi<vpts.length;vi++){
-        ctx.beginPath();ctx.arc(vpts[vi].x,vpts[vi].y,hr,0,Math.PI*2);ctx.fillStyle='#facc15';ctx.fill();
-        ctx.strokeStyle='#0f172a';ctx.lineWidth=1.5/S.scale;ctx.stroke();
+        ctx.beginPath();ctx.arc(vpts[vi].x,vpts[vi].y,hr,0,Math.PI*2);ctx.fillStyle='#f97316';ctx.fill();
+        ctx.strokeStyle='#fff';ctx.lineWidth=1.5/S.scale;ctx.stroke();
+      }
+      // Orange mid-segment curve handles for lineshape/curbchain
+      if(so.type==='lineshape'||so.type==='curbchain'){
+        var _lp=so.pts||[],_ns=_lp.length-(so.closed?0:1);
+        for(var _chi=0;_chi<_ns;_chi++){
+          var _chA=_lp[_chi],_chB=_chi<_lp.length-1?_lp[_chi+1]:_lp[0];
+          var _chc=so.controls&&so.controls[_chi];
+          var _chx=_chc?_chc.cx:(_chA.x+_chB.x)/2,_chy=_chc?_chc.cy:(_chA.y+_chB.y)/2;
+          ctx.beginPath();ctx.arc(_chx,_chy,hr*0.75,0,Math.PI*2);
+          ctx.fillStyle=_chc?'#f97316':'rgba(249,115,22,0.45)';ctx.fill();
+          ctx.strokeStyle='#fff';ctx.lineWidth=1/S.scale;ctx.stroke();
+        }
       }
       var cen=centroid(so),aw=hr*0.9;
       ctx.beginPath();ctx.arc(cen.x,cen.y,hr*1.4,0,Math.PI*2);ctx.fillStyle='rgba(250,204,21,0.18)';ctx.fill();
@@ -1518,12 +1530,10 @@ function onPD(e){
     return;
   }
 
-  // Line — drag from A to B; snaps start to any nearby endpoint
+  // Line — each drag appends a segment to one growing connected lineshape
   if(S.tool==='line'){
-    var snLine=snapPt(wp);
-    // If snap found a nearby endpoint use it; otherwise chain from lastLinePt if set
-    if(!snLine.snapped&&S.lastLinePt)snLine={x:S.lastLinePt.x,y:S.lastLinePt.y,snapped:true};
-    S.startPt=snLine;S.drawing=true;S.phase='drawing';
+    if(S.chain.length===0){var _ls0=snapPt(wp);S.chain=[_ls0];S.chainType='line';}
+    S.drawing=true;S.phase='drawing';
     return;
   }
 
@@ -1632,9 +1642,8 @@ function _onPM(e){
     S.preview={type:'lineshape',pts:[S.chain[S.chain.length-1],_csn],closed:false,color:S.col,lineWidth:S.strokeWidth||4,lineStyle:S.lineStyle||'solid'};
     S.snapPt=wp;updChain();return;
   }
-  if(S.tool==='line'&&S.phase==='drawing'&&S.startPt){
-    S.preview={type:'lineshape',pts:[S.startPt,sn],closed:false,color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'};
-    return;
+  if(S.tool==='line'&&S.phase==='drawing'&&S.chain.length>0){
+    S.snapPt=sn;S.preview=null;return;
   }
   if(S.tool==='measure') S.preview={type:'line',start:S.startPt||wp,end:sn,color:'#3b82f6',lineWidth:1.5};
   else if(S.tool==='rect') S.preview={type:'rect',start:S.startPt||wp,end:sn,color:S.col,lineWidth:1.8};
@@ -1692,28 +1701,20 @@ function onPU(e){
   if(S.phase==='bg-drag'){S.drawing=false;S.phase='idle';S.bg.dragStart=null;return;}
   if(S.phase==='curve-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.curveHandleIdx=-1;_sGen++;return;}
   if(S.phase==='dragging'||S.phase==='vtx-drag'){S.drawing=false;S.phase='idle';S.moveId=null;S.moveOffs=null;S.vertexIdx=-1;return;}
-  // Line: drag-to-draw commit — chains next line from this endpoint
-  if(S.tool==='line'&&S.startPt){
+  // Line: append segment to chain; close when endpoint meets chain start
+  if(S.tool==='line'&&S.chain.length>0&&S.phase==='drawing'){
     var ep=snapPt(wp);
-    if(d2(S.startPt,ep)>6/S.scale){
-      pushUndo();
-      var lid=nid();
-      S.objs.push({id:lid,type:'lineshape',pts:[S.startPt,ep],closed:false,curved:false,controls:[null],color:S.col,lineWidth:S.strokeWidth||2,lineStyle:S.lineStyle||'solid'});
-      S.lastLinePt={x:ep.x,y:ep.y};
-      S.lastDrawTool='line';
-      // Check if this line just closed a region
-      var _closedArea=false;
-      if(ep.snapped){
-        var _offs=[{x:24,y:0},{x:-24,y:0},{x:0,y:24},{x:0,y:-24},{x:18,y:18},{x:-18,y:18}];
-        for(var _oi=0;_oi<_offs.length&&!_closedArea;_oi++){
-          var _tp={x:ep.x+_offs[_oi].x/S.scale,y:ep.y+_offs[_oi].y/S.scale};
-          var _rp=enclosedRegionPoly(_tp);
-          if(_rp){var _sqft=Math.abs(polyArea(_rp))/(S.ppf*S.ppf);toast('Closed area: ~'+Math.round(_sqft)+' sq ft — use Fill tool to paint');_closedArea=true;}
-        }
-      }
-      if(!_closedArea)toast('Line drawn — tap endpoint dot to continue');
+    var last=S.chain[S.chain.length-1];
+    if(d2(last,ep)<6/S.scale){S.snapPt=null;S.drawing=false;S.phase='idle';return;}
+    // Close if endpoint lands near the first chain point (≥2 segments drawn)
+    if(S.chain.length>=3&&d2(ep,S.chain[0])<30/S.scale){
+      S.chain.push({x:S.chain[0].x,y:S.chain[0].y});
+      commitChain(true);S.lastLinePt=null;S.snapPt=null;return;
     }
-    S.startPt=null;S.preview=null;S.drawing=false;S.phase='idle';return;
+    S.chain.push(ep);
+    S.lastLinePt=ep;
+    S.snapPt=null;S.drawing=false;S.phase='idle';
+    updChain();return;
   }
   // Curbing: freehand commit
   if(S.tool==='curbing'){S.preview=null;updChain();return;}
@@ -1862,7 +1863,7 @@ function commitChain(closed){
     setSel(newId);
     var _ct=S.chainType;
     S.chain=[];S.preview=null;S.phase='idle';S.drawing=false;
-    if(_ct==='tap'||_ct==='curbing'){setTool('select');return;}
+    if(_ct==='tap'||_ct==='curbing'||(_ct==='line'&&closed)){setTool('select');return;}
   }
   S.chain=[];S.preview=null;S.phase='idle';
 }
