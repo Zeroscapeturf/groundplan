@@ -2916,13 +2916,10 @@ var _cn=cname||'Customer';
     +'  var initials=(document.getElementById(\'psign-initials\').value||\'').trim();'
     +'  var sigData=_psCv?_psCv.toDataURL():null;'
     +'  var date=new Date().toLocaleDateString(\'en-US\',{month:\'long\',day:\'numeric\',year:\'numeric\'});'
-    # Update signature area
     +'  var sa=document.getElementById(\'cust-sig-area\');'
     +'  if(sa&&sigData)sa.innerHTML=\'<img src="\'+sigData+\'" style="max-height:72px;max-width:100%;display:block;margin:8px 0">\';'
-    # Update date
     +'  var dd=document.getElementById(\'cust-sig-date-display\');'
     +'  if(dd)dd.textContent=\'Date: \'+date;'
-    # Update all initials spans
     +'  document.querySelectorAll(\'.cust-initials\').forEach(function(el){'
     +'    el.textContent=initials||\'\\u2713\';'
     +'    el.style.color=\'#15803d\';el.style.fontWeight=\'800\';'
