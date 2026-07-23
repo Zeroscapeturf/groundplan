@@ -2913,7 +2913,7 @@ var _cn=cname||'Customer';
     +'window.clearPSign=function(){if(_psCtx&&_psCv){_psCtx.clearRect(0,0,_psCv.width,_psCv.height);_psCtx.strokeStyle=\'rgba(255,255,255,0.1)\';_psCtx.beginPath();_psCtx.moveTo(10,110);_psCtx.lineTo(_psCv.width-10,110);_psCtx.stroke();}};'
     +'window.closeProposalSigning=function(){_psModal.style.display=\'none\';};'
     +'window.submitProposalSig=function(){'
-    +'  var initials=(document.getElementById(\'psign-initials\').value||\'').trim();'
+    +'  var initials=(document.getElementById(\'psign-initials\').value||\'\').trim();'
     +'  var sigData=_psCv?_psCv.toDataURL():null;'
     +'  var date=new Date().toLocaleDateString(\'en-US\',{month:\'long\',day:\'numeric\',year:\'numeric\'});'
     +'  var sa=document.getElementById(\'cust-sig-area\');'
