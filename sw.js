@@ -1,4 +1,4 @@
-var CACHE = 'groundplan-v42';
+var CACHE = 'groundplan-v43';
 var FILES = ['/', '/index.html', '/app.html'];
 
 self.addEventListener('install', function(e) {
